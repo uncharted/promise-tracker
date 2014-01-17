@@ -2,7 +2,7 @@ var apApp = apApp || {
   'settings': {}
 };
 (function($) {
-  //apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
+  // apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
   apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
   apApp.settings.cron = '';
   apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
@@ -25,6 +25,16 @@ var apApp = apApp || {
   document.addEventListener("deviceready", function(){
     initApp();
   }, false);
+
+  // if ("deviceready" in window) {
+  //   document.addEventListener("deviceready", function() {
+  //     initApp();
+  //   }, true);
+  // } else {
+  //   $(document).on('ready', function() {
+  //     initApp();
+  //   });
+  // }
 
   // function _getRealContentHeight() {
   //   var header = $.mobile.activePage.find("div[data-role='header']:visible");
@@ -374,9 +384,9 @@ var apApp = apApp || {
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
         tx.executeSql('UPDATE childs ' +
           'SET first_name = ?, last_name = ?, birth_date = ?, image_path = ?, ' +
-          'updated = ? ' +
+          'updated = ?, update_photo = ? ' +
           'WHERE cid = ?',
-          [data.first_name, data.last_name, data.birth_date, data.image_path, data.updated, data.cid],
+          [data.first_name, data.last_name, data.birth_date, data.image_path, data.updated, 1, data.cid],
           function(tx,results) {
             var cid = data.cid,
                 reloadPage = false,
@@ -393,13 +403,13 @@ var apApp = apApp || {
                   'WHERE cid = ? AND uid = ?', [relationship, cid, uid],
                   function(tx, results) {
                     if (reloadPage) {
-                      document.location.reload(true);
+                      location.reload();
                     }
                   }, _errorHandler);
               });
             }
             else {
-              document.location.reload(true);
+              location.reload();
             }
           }, _errorHandler);
       }, _errorHandler);
@@ -410,23 +420,6 @@ var apApp = apApp || {
   function events() {
     // jquery mobile events
     $(document)
-      .on('click', '#testuser', function(e) {
-        apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          tx.executeSql('INSERT INTO users (uid_origin, password, name, address, ' +
-            'email, image_path, updated, created, status, update_photo) ' +
-            'VALUES (0, "test", "testuser", "test", "test@mail.dev", "images/img/img01.jpg", ?, ?, 1, 1)',
-            [apApp.settings.timestamp, apApp.settings.timestamp],
-            function(tx, results) {
-              // set user profile UID
-              var uid = results.insertId;
-              tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
-                'VALUES (?, ?, ?)', [1, uid, 1],
-                function(tx, results) {
-                  document.location.reload(true);
-                }, _errorHandler);
-            }, _errorHandler);
-        }, _errorHandler);
-      })
       .on('pagebeforeshow', function(e) { // event pagebeforeshow
         var pageId = $.mobile.activePage.attr('id');
         if (pageId != undefined) {
@@ -698,7 +691,6 @@ var apApp = apApp || {
           var $popup = $(this).parents('div[data-role="popup"]');
           $popup.popup('close');
           _sendInvitation();
-          //e.preventDefault();
         }
       })
       .on('click', '.ui-popup-container .popup-buttons a.close', function(e) {
@@ -936,6 +928,10 @@ var apApp = apApp || {
             var image = $('#create-child-photo-img'),
               imageHolder = $('#create-child-photo'),
               uploadLink = $('#create-child-upload-photo');
+          } else if ($(this).hasClass('edit')) {
+            var image = $('#edit-child-photo-img'),
+              imageHolder = $('#edit-child-photo'),
+              uploadLink = $('#edit-child-upload-photo');
           } else {
             var image = $('#add-child-photo-img'),
               imageHolder = $('#add-child-photo'),
@@ -943,25 +939,6 @@ var apApp = apApp || {
           }
           _captureChildPhoto(photolibrary, image, imageHolder, uploadLink);
         }
-        // $('div[data-role="popup"]').popup('close');
-        e.preventDefault();
-      })
-      .on('click', '#drop', function(e) {
-        apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          tx.executeSql('DROP TABLE IF EXISTS variable');
-          tx.executeSql('DROP TABLE IF EXISTS users');
-          tx.executeSql('DROP TABLE IF EXISTS childs');
-          tx.executeSql('DROP TABLE IF EXISTS child_index');
-          tx.executeSql('DROP TABLE IF EXISTS relationships');
-          tx.executeSql('DROP TABLE IF EXISTS goals');
-          tx.executeSql('DROP TABLE IF EXISTS goal_index');
-          tx.executeSql('DROP TABLE IF EXISTS topics');
-          tx.executeSql('DROP TABLE IF EXISTS tips');
-          tx.executeSql('DROP TABLE IF EXISTS age');
-          tx.executeSql('DROP TABLE IF EXISTS topic');
-          document.location.reload(true);
-          // navigator.app.loadUrl('file:///android_asset/www/index.html');
-        }, _errorHandler);
         e.preventDefault();
       })
       .on('change', '#my-childrens [id*="assign-children"]', function(e) {
@@ -1478,8 +1455,8 @@ var apApp = apApp || {
               image.src = imageURI;
               var ts = parseInt(new Date().getTime() / 1000);
               // Update profile
-              tx.executeSql('UPDATE users SET image_path = ?, updated = ? ' +
-                'WHERE uid = ?', [imageURI, ts, apApp.settings.profileUID],
+              tx.executeSql('UPDATE users SET image_path = ?, updated = ?, update_photo = ? ' +
+                'WHERE uid = ?', [imageURI, ts, 1, apApp.settings.profileUID],
                 function(tx, results) {
                   _messagePopup('Photo was uploaded successfully.', false);
                 }, _errorHandler);
@@ -1579,13 +1556,13 @@ var apApp = apApp || {
           'VALUES (?, ?, ?)', [cid, uid, relationship],
           function(tx, results) {
             if (reloadPage) {
-              document.location.reload(true);
+              location.reload();
             }
           }, _errorHandler);
       });
     }
     else {
-      document.location.reload(true);
+      location.reload();
     }
   }
 
@@ -2165,20 +2142,20 @@ var apApp = apApp || {
   function _getStarted() {
     $.mobile.loading('show');
     var profile = {
-      'name': $('#create-profile-name').val(),
-      'password': $('#create-profile-password').val(),
-      'address': $('#create-profile-address').val(),
-      'email': $('#create-profile-email').val(),
-      'image_path': $('#create-profile-photo-img').attr('src')
-    },
-      child = {
-        'first_name': $('#create-child-first-name').val(),
-        'last_name': $('#create-child-last-name').val(),
-        'birth_date': $('#create-child-birth-date').val(),
-        'image_path': $('#create-child-photo-img').attr('src'),
-        'relationship': $('#create-child-relationship').val()
-      },
-      ts = parseInt(new Date().getTime() / 1000);
+          'name': $('#create-profile-name').val(),
+          'password': $('#create-profile-password').val(),
+          'address': $('#create-profile-address').val(),
+          'email': $('#create-profile-email').val(),
+          'image_path': $('#create-profile-photo-img').attr('src')
+        },
+        child = {
+          'first_name': $('#create-child-first-name').val(),
+          'last_name': $('#create-child-last-name').val(),
+          'birth_date': $('#create-child-birth-date').val(),
+          'image_path': $('#create-child-photo-img').attr('src'),
+          'relationship': $('#create-child-relationship').val()
+        },
+        ts = parseInt(new Date().getTime() / 1000);
     child.age = _getAge(child.birth_date);
     // Create users
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
@@ -2260,15 +2237,15 @@ var apApp = apApp || {
   function _uploadPhotoSuccessCallback(r) {
     var response = jQuery.parseJSON(r.response);
     if (response.uid != undefined) {
-      apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        tx.executeSql('UPDATE users SET update_photo=? WHERE uid_origin=?', [0, response.uid]);
-      });
+      // apApp.settings.dbPromiseTracker.transaction(function(tx) {
+      //   tx.executeSql('UPDATE users SET update_photo=? WHERE uid_origin=?', [0, response.uid]);
+      // });
       _messagePopup("Successfully uploading User image", false);
     }
     if (response.cid != undefined) {
-      apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        tx.executeSql('UPDATE childs SET update_photo=? WHERE cid_origin=?', [0, response.cid]);
-      });
+      // apApp.settings.dbPromiseTracker.transaction(function(tx) {
+      //   tx.executeSql('UPDATE childs SET update_photo=? WHERE cid_origin=?', [0, response.cid]);
+      // });
       _messagePopup("Successfully uploading Child image", false);
     }
 
