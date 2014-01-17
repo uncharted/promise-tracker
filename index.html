@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="user-scalable=no, initial-scale=1,
+      maximum-scale=1, minimum-scale=1, width=device-width, height=device-height" />
+    <title>Promise Tracker</title>
+    <link rel="stylesheet" href="css/contrib/jquery.mobile.structure-1.3.2.min.css" type="text/css" />
+    <link rel="stylesheet" href="css/main.css" type="text/css" />
+    <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/contrib/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.mobile-1.3.2.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.cycle2.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.cycle2.swipe.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.infieldlabel.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.validate.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/promise-tracker.js"></script>
+  </head>
+  <body>
+    <!-- Page Front  -->
+    <div data-role="page" data-title="Promise Tracker" id="home">
+      <!-- Main menu -->
+      <nav data-role="panel" id="main-menu" data-position="right">
+        <ul data-role="listview" data-inset="true">
+          <li class="search-holder" data-icon="search">
+            <a class="search" href="#search-goals-1" data-transition="slide">Search goals</a>
+          </li>
+          <li class="add-child-in-menu" data-icon="plus">
+            <a href="#add-child" data-transition="slide">Add a child</a>
+          </li>
+          <li class="village">
+            <a href="#team" class="is-ico" data-transition="slide">Village</a>
+          </li>
+          <li data-icon="gear">
+            <a href="#settings" data-transition="slide">MY settings</a>
+          </li>
+        </ul>
+        <div class="copyright">
+          <div class="holder">
+            <img src="images/second-logo.png" alt="Promise Tracker" />
+            <p>&copy; 2013 Rada Film Group</p>
+            <p>Designed by Uncharted Digital</p>
+          </div>
+        </div>
+      </nav>
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+        <a href="#" class="main-menu-btn ui-btn-right">Menu</a>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <div id="list-children"></div>
+      </section><!-- /#main -->
+    </div>
+    <!-- Page Goal Settings -->
+    <div data-role="page" data-title="Goal Settings" id="goal-settings" data-add-back-btn="true">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+        <a href="#" class="main-menu-btn ui-btn-right">Menu</a>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <article class="child item inner">
+          <img src="images/img/img01.jpg" alt="" />
+          <span class="image-horizontal-gradient-overlay"></span>
+          <span class="title">Maurice</span>
+        </article>
+        <div class="form">
+          <h2 class="label">Improve vegetable intake</h2>
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain persons-holder">
+              <div class="side-holder">
+                <div class="left-side"><label for="remind">Remind:</label></div>
+                <div class="right-side">
+                  <ul class="persons-inline">
+                    <li class="active">
+                      <button name="button1" data-theme="b">
+                        <span class="rounded">
+                          <img src="" alt="Robert" />
+                        </span>
+                        <span>Robert</span>
+                      </button>
+                    </li>
+                    <li class="active">
+                      <button name="button2" data-theme="b">
+                        <span class="rounded">
+                          <img src="" alt="Eva" />
+                        </span>
+                        <span>Eva</span>
+                      </button>
+                    </li>
+                    <li>
+                      <button name="button3" data-theme="b">
+                        <span class="rounded">
+                          <img src="" alt="Elizabeth" />
+                        </span>
+                        <span>Elizabeth</span>
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="ui-field-contain">
+              <div class="side-holder">
+                <div class="left-side">
+                  <label for="select-day">Every:</label>
+                </div>
+                <div class="right-side">
+                  <input type="text" name="select-day" placeholder="Day" id="select-day" value="Day" />
+                </div>
+              </div>
+            </div>
+            <div class="ui-field-contain">
+              <div class="side-holder">
+                <div class="left-side">
+                  <label for="select-time">At:</label>
+                </div>
+                <div class="right-side">
+                  <input type="text" name="select-day" placeholder="9:00 AM" id="select-time" value="9:00 AM" />
+                </div>
+              </div>
+            </div>
+            <div class="ui-field-contain">
+              <div class="side-holder">
+                <div class="left-side">
+                  <label for="select-interval">For:</label>
+                </div>
+                <div class="right-side">
+                  <input type="text" name="select-day" placeholder="2 weeks" id="select-time" value="2 weeks" />
+                </div>
+              </div>
+            </div>
+            <div class="ui-field-contain buttons">
+              <label for="submit-goal-settings" class="ui-hidden-accessible">Add:</label>
+              <button type="submit" id="submit-add-child" class="ui-btn">Add</button>
+            </div>
+          </form>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <!-- Page Edit child -->
+    <div data-role="page" data-title="Edit child" id="edit-child" data-add-back-btn="true">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+        <a href="#" class="main-menu-btn ui-btn-right">Menu</a>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">Edit <span id="edit-child-fname"></span></h2>
+        <div class="form add-new-child">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain">
+              <div class="side-holder">
+                <div class="left-side image-upload">
+                  <div id="edit-child-upload-photo-popup" data-role="popup">
+                    <div class="popup-holder">
+                      <a href="#" class="upload-image to-child">Capture Photo</a>
+                      <a href="#" class="upload-image to-child photolibrary">From Photo Library</a>
+                    </div>
+                    <div class="popup-buttons">
+                      <a href="#" class="close single">Cancel</a>
+                    </div>
+                  </div>
+                  <div id="edit-child-photo" class="image-holder rounded">
+                    <a href="#edit-child-upload-photo-popup" data-rel="popup" data-position-to="window" data-transition="pop">
+                      <img id="edit-child-photo-img" src="" alt=""/>
+                    </a>
+                  </div>
+                </div>
+                <div class="right-side">
+                  <div class="ui-field-contain">
+                    <label for="edit-child-first-name" class="placeholder">First name</label>
+                    <input type="text" name="edit-child-first-name" id="edit-child-first-name" value="" />
+                  </div>
+                  <div class="ui-field-contain">
+                    <label for="edit-child-last-name" class="placeholder">Last name</label>
+                    <input type="text" name="edit-child-last-name" id="edit-child-last-name" value="" />
+                  </div>
+                  <div class="ui-field-contain">
+                    <label for="edit-child-birth-date" class="placeholder">Birthdate</label>
+                    <input type="date" name="edit-child-birth-date" id="edit-child-birth-date" value="" />
+                  </div>
+                  <div class="ui-field-contain buttons">
+                    <label for="submit-update-child" class="ui-hidden-accessible">Update:</label>
+                    <button type="submit" id="submit-update-child" class="ui-btn">Update</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="assign-village-holder">
+          <ul id="edit-assign-village" class="my-childrens assign-village-list" data-role="listview">
+            <li data-icon="plus"><a href="#">Assign village</a></li>
+          </ul>
+          <a href="#" class="ui-btn submit">Invite more members</a>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <!-- Page Add a child  -->
+    <div data-role="page" data-title="Add a child" id="add-child" data-add-back-btn="true">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+        <a href="#" class="main-menu-btn ui-btn-right">Menu</a>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">Add a child</h2>
+        <div class="form add-new-child">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain">
+              <div class="side-holder">
+                <div class="left-side image-upload">
+                  <a href="#add-child-upload-photo-popup" id="add-child-upload-photo" class="upload-photo" data-rel="popup" data-position-to="window" data-transition="pop">Child Image</a>
+                  <div id="add-child-upload-photo-popup" data-role="popup">
+                    <div class="popup-holder">
+                      <a href="#" class="upload-image to-child">Capture Photo</a>
+                      <a href="#" class="upload-image to-child photolibrary">From Photo Library</a>
+                    </div>
+                    <div class="popup-buttons">
+                      <a href="#" class="close single">Cancel</a>
+                    </div>
+                  </div>
+                  <div id="add-child-photo" style="display: none;" class="image-holder rounded">
+                    <a href="#add-child-upload-photo-popup" data-rel="popup" data-position-to="window" data-transition="pop">
+                      <img id="add-child-photo-img" src="" alt=""/>
+                    </a>
+                  </div>
+                </div>
+                <div class="right-side">
+                  <div class="ui-field-contain">
+                    <label for="add-child-first-name" class="placeholder">First name</label>
+                    <input type="text" name="add-child-first-name" id="add-child-first-name" value="" />
+                  </div>
+                  <div class="ui-field-contain">
+                    <label for="add-child-last-name" class="placeholder">Last name</label>
+                    <input type="text" name="add-child-last-name" id="add-child-last-name" value="" />
+                  </div>
+                  <div class="ui-field-contain">
+                    <label for="add-child-birth-date" class="placeholder">Birthdate</label>
+                    <input type="date" name="add-child-birth-date" id="add-child-birth-date" value="" />
+                  </div>
+                  <div class="ui-field-contain buttons">
+                    <label for="submit-add-new-child" class="ui-hidden-accessible">Save:</label>
+                    <button type="submit" id="submit-add-new-child" class="ui-btn">Save</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="assign-village-holder">
+          <ul id="assign-village" class="my-childrens assign-village-list" data-role="listview">
+            <li data-icon="plus"><a href="#">Assign village</a></li>
+          </ul>
+          <a href="#" class="ui-btn submit">Invite more members</a>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <!-- Page Team  -->
+    <div data-role="page" data-title="Team page" id="team" data-add-back-btn="true">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+        <a href="#" class="main-menu-btn ui-btn-right">Menu</a>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">Who's in the Village</h2>
+        <ul class="persons-inline in-the-village">
+          <!-- <li><a href="#"><span class="rounded medium"><img src="images/img/img01.jpg" alt="Robert" /></span>Robert</a></li> -->
+          <li class="add-new">
+            <a href="#add-to-village-popup" data-theme="b" data-rel="popup" data-position-to="window" data-transition="pop"><span>Add</span></a>
+          </li>
+        </ul>
+        <div id="add-to-village-popup" data-role="popup">
+          <div class="popup-holder">
+            <form action="#">
+              <h3>Invite others to this village</h3>
+              <div class="ui-field-contain">
+                <label for="add-to-village-firstname" class="placeholder">First name</label>
+                <input type="text" required="required" name="add-to-village-firstname" id="add-to-village-firstname" value="" />
+              </div>
+              <div class="ui-field-contain">
+                <label for="add-to-village-lastname" class="placeholder">Last name</label>
+                <input type="text" name="add-to-village-lastname" id="add-to-village-lastname" value="" />
+              </div>
+              <div class="ui-field-contain">
+                <label for="add-to-village-email" class="placeholder">Email Address</label>
+                <input type="email" required="required" name="add-to-village-email" id="add-to-village-email" value="" />
+              </div>
+              <div class="ui-field-contain">
+                <label for="add-to-village-message" class="placeholder">Please join our village on the American Promise: Promise Tracker.</label>
+                <textarea cols="40" rows="6" name="add-to-village-message" id="add-to-village-message"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="popup-buttons">
+            <a href="#" class="close">Cancel</a>
+            <a id="send-notification" href="" data-rel="popup" data-position-to="window" data-transition="pop">Send</a>
+          </div>
+        </div>
+        <div id="add-to-village-success-popup" data-role="popup">
+          <div class="popup-holder">
+            <h3>Notification has been sent successfully.</h3>
+          </div>
+          <div class="popup-buttons">
+            <a href="#" class="close single">Ok</a>
+          </div>
+        </div>
+        <ul id="village-goals" class="check-listview with-img" data-role="listview">
+          <li data-icon="plus"><a id="add-vilage-goals" href="#" data-transition="slide">Village Goals</a></li>
+        </ul>
+      </section><!-- /#main -->
+    </div>
+    <div data-role="page" data-title="Registration" id="registration-first-step" class="page">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">Step 1. Create your account</h2>
+        <div class="form create-profile">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain centered">
+              <a href="#create-profile-upload-photo-popup" id="create-profile-upload-photo" class="upload-photo to-profile middle" data-rel="popup" data-position-to="window" data-transition="pop">Profile Image</a>
+              <div id="create-profile-photo" style="display: none;" class="image-holder">
+                <a href="#create-profile-upload-photo-popup" data-rel="popup" data-position-to="window" data-transition="pop">
+                  <span class="rounded"><img id="create-profile-photo-img" src="" alt="" /></span>
+                </a>
+              </div>
+              <div id="create-profile-upload-photo-popup" data-role="popup">
+                <div class="popup-holder">
+                  <a href="#" class="upload-image to-profile">Capture Photo</a>
+                  <a href="#" class="upload-image to-profile photolibrary">From Photo Library</a>
+                </div>
+                <div class="popup-buttons">
+                  <a href="#" class="close single">Cancel</a>
+                </div>
+              </div>
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-profile-name" class="placeholder">Name</label>
+              <input type="text" required="required" class="create-profile-input" name="create-profile-name" id="create-profile-name" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-profile-address" class="placeholder">Address</label>
+              <input type="text" class="create-profile-input" name="create-profile-address" id="create-profile-address" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-profile-email" class="placeholder">Email</label>
+              <input type="email" required="required" class="create-profile-input" name="create-profile-email" id="create-profile-email" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-profile-password" class="placeholder">Password</label>
+              <input type="password" required="required" class="create-profile-input" name="create-profile-password" id="create-profile-password" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-profile-confirm-password" class="placeholder">Confirm Password</label>
+              <input type="password" class="create-profile-input passmatch" name="create-profile-confirm-password" id="create-profile-confirm-password" value="" />
+            </div>
+            <div class="ui-field-contain buttons">
+              <label for="submit-create-profile" class="ui-hidden-accessible">Next:</label>
+              <button type="submit" id="submit-create-profile" class="ui-btn">Next</button>
+            </div>
+          </form>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <div data-role="page" data-title="Registration" id="registration-second-step" data-add-back-btn="true" class="page">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">Step 2. Add a child</h2>
+        <div class="form create-child">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain centered">
+              <a href="#create-child-upload-photo-popup" id="create-child-upload-photo" class="upload-photo to-child" data-rel="popup" data-position-to="window" data-transition="pop">Child Image</a>
+              <div id="create-child-photo" style="display: none;" class="image-holder">
+                <a href="#create-child-upload-photo-popup" data-rel="popup" data-position-to="window" data-transition="pop">
+                  <span class="rounded"><img id="create-child-photo-img" src="" alt=""/></span>
+                </a>
+              </div>
+              <div id="create-child-upload-photo-popup" data-role="popup">
+                <div class="popup-holder">
+                  <a href="#" class="upload-image to-child reg">Capture Photo</a>
+                  <a href="#" class="upload-image to-child reg photolibrary">From Photo Library</a>
+                </div>
+                <div class="popup-buttons">
+                  <a href="#" class="close single">Cancel</a>
+                </div>
+              </div>
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-child-first-name" class="placeholder">First Name</label>
+              <input type="text" class="create-child-input" name="create-child-first-name" id="create-child-first-name" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-child-last-name" class="placeholder">Last Name</label>
+              <input type="text" class="create-child-input" name="create-child-last-name" id="create-child-last-name" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-child-birth-date" class="placeholder">Birthdate</label>
+              <input type="date" class="create-child-input" name="create-child-birth-date" id="create-child-birth-date" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="create-child-relationship" class="ui-hidden-accessible">Relationship</label>
+              <select name="create-child-relationship" class="relationship" id="create-child-relationship">
+                <option value="">Relationship</option>
+              </select>
+            </div>
+            <div class="ui-field-contain buttons">
+              <label for="submit-create-child" class="ui-hidden-accessible">Next:</label>
+              <button type="submit" id="submit-create-child" class="ui-btn">Next</button>
+            </div>
+          </form>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <div data-role="page" data-title="Registration" id="registration-third-step" data-add-back-btn="true" class="page">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child left">Step 3. Build your village<br />and add goals</h2>
+        <p>&nbsp;</p>
+        <p>It takes a village.</p>
+        <p>Use the Promise Tracker to build yours by inviting your family, friends, teachers, babysitters, and anyone else who plays a role in raising your child.</p>
+        <p>Then set goals and assign reminders to individual members.</p>
+        <p>&nbsp;</p>
+        <div class="form get-started">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain buttons">
+              <label for="submit-get-started" class="ui-hidden-accessible">Get Started:</label>
+              <button type="submit" id="submit-get-started" class="ui-btn">Get Started</button>
+            </div>
+          </form>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <!-- Page Team  -->
+    <div data-role="page" data-title="My settings" id="settings" data-add-back-btn="true">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+        <a href="#" class="main-menu-btn ui-btn-right">Menu</a>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">My Settings</h2>
+        <div class="form profile">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain">
+              <div class="side-holder">
+                <div class="left-side image-upload">
+                  <a href="#profile-upload-photo-popup" id="profile-upload-photo" class="upload-photo small" data-rel="popup" data-position-to="window" data-transition="pop">Profile Image</a>
+                  <div id="profile-upload-photo-popup" data-role="popup">
+                    <div class="popup-holder">
+                      <a href="#" class="upload-image to-profile">Capture Photo</a>
+                      <a href="#" class="upload-image to-profile photolibrary">From Photo Library</a>
+                    </div>
+                    <div class="popup-buttons">
+                      <a href="#" class="close single">Cancel</a>
+                    </div>
+                  </div>
+                  <div id="profile-photo"  style="display: none;" class="image-holder rounded">
+                    <a href="#profile-upload-photo-popup" data-rel="popup" data-position-to="window" data-transition="pop">
+                      <img id="profile-photo-img" src="" alt="" />
+                    </a>
+                  </div>
+                </div>
+                <div class="right-side">
+                  <div class="ui-field-contain">
+                    <label for="profile-name" class="placeholder">Name</label>
+                    <input type="text" required="required" class="profile-input" name="profile-name" id="profile-name" value="" />
+                  </div>
+                  <div class="ui-field-contain">
+                    <label for="profile-address" class="placeholder">Address</label>
+                    <input type="text" class="profile-input" name="profile-address" id="profile-address" value="" />
+                  </div>
+                </div>
+                <div class="ui-field-contain">
+                  <label for="profile-email" class="placeholder">Email</label>
+                  <input type="email" required="required" class="profile-input" name="profile-email" id="profile-email" value="" />
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <ul id="my-childrens" class="my-childrens" data-role="listview">
+          <li data-icon="plus"><a href="#add-child" data-transition="slide">My Children</a></li>
+        </ul>
+        <ul id="my-goals" class="check-listview with-img" data-role="listview">
+          <li data-icon="plus"><a href="#" data-transition="slide">My Goals</a></li>
+        </ul>
+      </section><!-- /#main -->
+    </div>
+    <div id="message-popup"></div>
+  </body>
+</html>
