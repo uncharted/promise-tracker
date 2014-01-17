@@ -22,19 +22,19 @@ var apApp = apApp || {
   apApp.settings.goalsInvite = {};
 
   // device APIs are available
-  document.addEventListener("deviceready", function(){
-    initApp();
-  }, false);
+  // document.addEventListener("deviceready", function(){
+  //   initApp();
+  // }, false);
 
-  // if ("deviceready" in window) {
-  //   document.addEventListener("deviceready", function() {
-  //     initApp();
-  //   }, true);
-  // } else {
-  //   $(document).on('ready', function() {
-  //     initApp();
-  //   });
-  // }
+  if ("deviceready" in window) {
+    document.addEventListener("deviceready", function() {
+      initApp();
+    }, true);
+  } else {
+    $(document).on('ready', function() {
+      initApp();
+    });
+  }
 
   // function _getRealContentHeight() {
   //   var header = $.mobile.activePage.find("div[data-role='header']:visible");
@@ -294,7 +294,7 @@ var apApp = apApp || {
   // Connect database
   function db() {
     $.mobile.loading('show');
-    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFileSystemSuccess, _onFail);
+    // window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFileSystemSuccess, _onFail);
     apApp.settings.dbPromiseTracker = window.openDatabase("Database", "1.0",
       "PromiseTracker", 200000);
     apApp.settings.dbPromiseTracker.transaction(_dbInit, _errorHandler);
@@ -2237,15 +2237,15 @@ var apApp = apApp || {
   function _uploadPhotoSuccessCallback(r) {
     var response = jQuery.parseJSON(r.response);
     if (response.uid != undefined) {
-      // apApp.settings.dbPromiseTracker.transaction(function(tx) {
-      //   tx.executeSql('UPDATE users SET update_photo=? WHERE uid_origin=?', [0, response.uid]);
-      // });
+       apApp.settings.dbPromiseTracker.transaction(function(tx) {
+         tx.executeSql('UPDATE users SET update_photo=? WHERE uid_origin=?', [0, response.uid]);
+       });
       _messagePopup("Successfully uploading User image", false);
     }
     if (response.cid != undefined) {
-      // apApp.settings.dbPromiseTracker.transaction(function(tx) {
-      //   tx.executeSql('UPDATE childs SET update_photo=? WHERE cid_origin=?', [0, response.cid]);
-      // });
+       apApp.settings.dbPromiseTracker.transaction(function(tx) {
+         tx.executeSql('UPDATE childs SET update_photo=? WHERE cid_origin=?', [0, response.cid]);
+       });
       _messagePopup("Successfully uploading Child image", false);
     }
 
@@ -2683,17 +2683,17 @@ var apApp = apApp || {
   }
 
   function _downloadUserPhoto(user) {
-    var imagePath = apApp.settings.FullPath + '/' + user.photo; //full file path
-    var url = encodeURI(user.photo_url);
-    var ft = new FileTransfer();
-    ft.download(url, imagePath, function(file) {
-      _messagePopup('Downloading User photo successfully', false);
-      apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [file.fullPath, user.uid_origin]);
-      });
-    }, function(error) {
-      _messagePopup('There was an error downloading image', true);
-    });
+    // var imagePath = apApp.settings.FullPath + '/' + user.photo; //full file path
+    // var url = encodeURI(user.photo_url);
+    // var ft = new FileTransfer();
+    // ft.download(url, imagePath, function(file) {
+    //   _messagePopup('Downloading User photo successfully', false);
+    //   apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    //     tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [file.fullPath, user.uid_origin]);
+    //   });
+    // }, function(error) {
+    //   _messagePopup('There was an error downloading image', true);
+    // });
   }
 
   function onFileSystemSuccess(fileSystem) {
@@ -2707,17 +2707,17 @@ var apApp = apApp || {
   }
 
   function _downloadChildPhoto(child) {
-    var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
-    var url = encodeURI(child.photo_url);
-    var ft = new FileTransfer();
-    ft.download(url, imagePath, function(file) {
-      _messagePopup('Downloading Child photo successfully', false);
-      apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [file.fullPath, child.cid_origin]);
-      });
-    }, function(error) {
-      _messagePopup('There was an error downloading image', true);
-    });
+    // var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
+    // var url = encodeURI(child.photo_url);
+    // var ft = new FileTransfer();
+    // ft.download(url, imagePath, function(file) {
+    //   _messagePopup('Downloading Child photo successfully', false);
+    //   apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    //     tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [file.fullPath, child.cid_origin]);
+    //   });
+    // }, function(error) {
+    //   _messagePopup('There was an error downloading image', true);
+    // });
   }
 
   function _importUsersToApp(users, key) {
