@@ -2298,7 +2298,7 @@ function _getHtml(idx, dt, options) {
       output += '</a></li>';
       break;
     case 'invitePopup':
-      output += '<div id="invite-popup-' + dt.uid + '" data-uid-origin="' + dt.uid + '" data-role="popup">';
+      output += '<div data-register="'+dt.register+'" id="invite-popup-' + dt.uid + '" data-uid-origin="' + dt.uid + '" data-role="popup">';
       output += '  <div class="popup-holder">';
       output += '    <h3>' + dt.name + ' has invited you to join their village.</h3>';
       output += '    <p>Do you accept?</p>';
@@ -3072,7 +3072,6 @@ function _firstUploadUser(user) {
           tx.executeSql('UPDATE users SET uid_origin=? WHERE uid=?', [user.uid_origin, user.uid], function() {
             _uploadUserPictureToSite(user);
             _getInvitationRegister();
-            //_registrationSecondStep();
             _messagePopup('Profile upload to site');
           });
         });
