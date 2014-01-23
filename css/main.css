@@ -231,6 +231,10 @@ body .ui-mobile .ui-page {
 /* round */
 .rounded {
   border-radius: 50% !important;
+  border-top-left-radius: 50% !important;
+  border-top-right-radius: 50% !important;
+  border-bottom-left-radius: 50% !important;
+  border-bottom-right-radius: 50% !important;
   overflow: hidden !important;
   border: 2px solid #fff !important;
 }
@@ -452,6 +456,33 @@ div.copyright img {
   text-decoration: none;
   display: block;
 }
+.main .child.item a + a {
+  display: none !important;
+}
+.main .child.item a.edit-child {
+  display: block;
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 50px;
+  height: 50px;
+  overflow: hidden;
+  text-indent: -9999px;
+  float: left;
+  line-height: 0;
+  z-index: 400;
+}
+.main .child.item a.edit-child span {
+  background: url(../images/icons.png) no-repeat -154px -67px;
+  background-size: 200px 200px;
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
 .main .child.item .title {
   position: absolute;
   left: 0;
@@ -516,6 +547,7 @@ div.copyright img {
   color: #002d40;
   text-transform: uppercase;
   text-decoration: none !important;
+  white-space: normal !important;
 }
 .main .ui-btn .ui-icon {
   width: 22px;
@@ -945,13 +977,13 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
   overflow: hidden;
   right: 8px;
   margin-top: -11px;
-  background: url(../images/icons.png) no-repeat -88px -67px;
+  background: url(../images/icons.png) no-repeat -154px -67px;
   background-size: 200px 200px;
   top: 50%;
 }
-.main .form.profile .side-holder div.ui-input-text:after {
+/*.main .form.profile .side-holder div.ui-input-text:after {
   background-position: -154px -67px;
-}
+}*/
 .main .form .side-holder div.ui-input-text input.ui-input-text {
   padding: 0.2em 0;
   position: relative;
@@ -962,8 +994,16 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
   display: block;
 }
 .main .form .right-side .ui-btn-inner {
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding: 5px 22px 5px 0.4em;
+}
+.main .form .right-side .ui-btn-inner .ui-icon {
+  right: 0;
+}
+body .main .form .right-side div.ui-input-text {
+  padding-right: 22px;
+}
+body .main .form .right-side div.ui-input-text:after {
+  right: 0;
 }
 .main .form.add-new-child .ui-select .ui-btn-inner {
   padding-left: .4em;
@@ -1016,8 +1056,8 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
   overflow: hidden;
 }
 .assign-village-holder a.ui-btn.submit {
-  float: right;
-  margin-right: 0.6em;
+  /* float: right; */
+  /* margin-right: 0.6em; */
 }
 .assign-village-holder .ui-icon-plus {
   display: none !important;
@@ -1227,19 +1267,12 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
 }
 .main .persons-inline li {
   display: inline-block;
-  margin: 0 10px 5px 0;
+  margin: 0 7px 5px;
   text-align: center;
   text-transform: uppercase;
   opacity: 0.2;
 }
-.main .persons-inline.in-the-village {
-  text-align: center;
-}
-.main .persons-inline.in-the-village li {
-  opacity: 1;
-  margin: 0 7px 5px;
-}
-.main .persons-inline.in-the-village li a {
+.main .persons-inline li a {
   clear: left;
   float: left;
   width: 54px;
@@ -1295,6 +1328,12 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
   top: 50%;
   left: 50%;
   margin: -12px 0 0 -11px;
+}
+.main .persons-inline.in-the-village {
+  text-align: center;
+}
+.main .persons-inline.in-the-village li {
+  opacity: 1;
 }
 .main .form.add-new-child form {
   border: 0;
@@ -1359,6 +1398,9 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
   display: inline-block;
   text-align: right;
   padding-right: 10px;
+}
+.main #my-childrens-village.ui-listview.my-childrens a span {
+  color: #002d40;
 }
 .main .ui-listview.my-childrens a span.rounded {
   width: 48px;
@@ -1546,4 +1588,11 @@ div.page .main .form form div.ui-input-text:after {
 }
 #registration-third-step form {
   margin: 0;
+}
+#registration-second-step .village-children {
+  display: none;
+}
+#submit-assing-children {
+  float: right;
+  margin-right: 0.6em;
 }
