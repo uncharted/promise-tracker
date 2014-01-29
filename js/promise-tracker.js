@@ -2,10 +2,11 @@ var apApp = apApp || {
   'settings': {}
 };
 (function($) {
-// apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
+//apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
 apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
 apApp.settings.cron = '';
 apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
+apApp.settings.cron_safe_threshold = 2*60; // 2 minute;
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
 apApp.settings.dbPromiseTracker;
 apApp.settings.timestamp = parseInt(new Date().getTime() / 1000);
@@ -15,6 +16,7 @@ apApp.settings.relationships = [];
 apApp.settings.topicTids = [];
 apApp.settings.profileUID;
 apApp.settings.createNewChild;
+apApp.settings.registation;
 apApp.settings.queryExclude = {
   'init': true
 };
@@ -25,13 +27,6 @@ apApp.settings.goalsInvite = {};
 // device APIs are available
 document.addEventListener("deviceready", initApp, false);
 document.addEventListener("resume", resumeApp, false);
-
-// if ("deviceready" in window) {
-//   document.addEventListener("deviceready", initApp, true);
-//   document.addEventListener("resume", resumeApp, false);
-// } else {
-//   $(document).on('ready', initApp);
-// }
 
 // Initialize All functions
 function initApp() {
@@ -909,9 +904,8 @@ function _selectCronVariableCB(tx, results) {
   } else {
     apApp.settings.cron = 0;
   }
-  //
   var time = apApp.settings.timestamp - apApp.settings.cron;
-  if (time > apApp.settings.cron_safe_threshold) {
+  if (time > apApp.settings.cron_safe_threshold || apApp.settings.registation) {
     _uploadContent();
     // _getContent();
   } else {
@@ -1069,6 +1063,76 @@ function _addGoals(goals, key) {
   });
 }
 
+function _addChilds(childs,key){
+  var users = [];
+  apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    tx.executeSql('SELECT uid, uid_origin FROM users',[],function(tx, results){
+    var len = results.rows.length;
+    if (len){
+      for (var i = 0; i < len; i++) {
+        var item = results.rows.item(i);
+        users[item.uid_origin] = item.uid;
+      }
+      $.each(childs.children, function(i, child) {
+        if (child.insert == 1) {
+          _insertChild(child,users);
+        }
+        if (child.update == 1) {
+          _updateChild(child,users);
+        }
+        apApp.settings.queryExclude.childs = true;
+        _queryExclude(key);
+       });
+    }
+    },function(err){
+      _errorHandler(err, 1018);
+    });
+  });
+
+}
+
+function _insertChild(child,users){
+  apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    tx.executeSql('INSERT INTO childs (cid_origin, uid, first_name, ' +
+      'last_name, birth_date, age, updated, created, status) ' +
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.cid_origin, users[child.uid_origin], child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
+    function(tx, results) {
+      _messagePopup('Add new child ' + child.first_name + ' ');
+      var cid = results.insertId;
+      if (child.photo != undefined) _downloadChildPhoto(child);
+      if (child.child_index != undefined) {
+        //create child_index
+        $.each(child.child_index, function(i, relationship) {
+          if (users[relationship.uid] != undefined) {
+            tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
+              'VALUES (?, ?, ?)', [cid, users[relationship.uid], relationship.relationship],
+              function(tx, results) {}, function(err) {
+                _errorHandler(err, 1028)
+              });
+          }
+        });
+      }
+    }, function(err) {
+      _errorHandler(err, 1034)
+    });
+  });
+  
+}
+
+function _updateChild(child,users) {
+  apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    tx.executeSql('UPDATE childs SET first_name = ? last_name = ?, birth_date = ?, age = ?,' + 
+    'updated = ?, created = ?, status = ?) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
+    function(tx, results) {
+      _messagePopup('Update child ' + child.first_name );
+    }, function(err) {
+      _errorHandler(err, 1127)
+    });
+  });
+
+}
+
 function _insertAge(ages, id, type) {
   $.each(ages, function(delta, age) {
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
@@ -1132,6 +1196,10 @@ function _getContent(key) {
         apApp.settings.queryExclude.goals = false;
         _addGoals(response.goals, key);
       }
+      if (response.childs != undefined) {
+        apApp.settings.queryExclude.childs = false;
+        _addChilds(response.childs,key);
+      }
       _getInvitation();
       _getYourInvitation();
       _queryExclude(key);
@@ -1153,19 +1221,19 @@ function _getContent(key) {
 // Initialize the database
 function _dbInit(tx) {
   tx.executeSql('DROP TABLE IF EXISTS relationships');
-  // tx.executeSql('DROP TABLE IF EXISTS variable');
-  // tx.executeSql('DROP TABLE IF EXISTS users');
-  // tx.executeSql('DROP TABLE IF EXISTS childs');
-  // tx.executeSql('DROP TABLE IF EXISTS child_index');
-  // tx.executeSql('DROP TABLE IF EXISTS relationships');
-  // tx.executeSql('DROP TABLE IF EXISTS goals');
-  // tx.executeSql('DROP TABLE IF EXISTS goal_index');
-  // tx.executeSql('DROP TABLE IF EXISTS topics');
-  // tx.executeSql('DROP TABLE IF EXISTS tips');
-  // tx.executeSql('DROP TABLE IF EXISTS age');
-  // tx.executeSql('DROP TABLE IF EXISTS topic');
-  // tx.executeSql('DROP TABLE IF EXISTS reminder');
-  // tx.executeSql('DROP TABLE IF EXISTS reminder_index');
+  /*tx.executeSql('DROP TABLE IF EXISTS variable');
+  tx.executeSql('DROP TABLE IF EXISTS users');
+  tx.executeSql('DROP TABLE IF EXISTS childs');
+  tx.executeSql('DROP TABLE IF EXISTS child_index');
+  tx.executeSql('DROP TABLE IF EXISTS relationships');
+  tx.executeSql('DROP TABLE IF EXISTS goals');
+  tx.executeSql('DROP TABLE IF EXISTS goal_index');
+  tx.executeSql('DROP TABLE IF EXISTS topics');
+  tx.executeSql('DROP TABLE IF EXISTS tips');
+  tx.executeSql('DROP TABLE IF EXISTS age');
+  tx.executeSql('DROP TABLE IF EXISTS topic');
+  tx.executeSql('DROP TABLE IF EXISTS reminder');
+  tx.executeSql('DROP TABLE IF EXISTS reminder_index');*/
 
   // create tables
   tx.executeSql('CREATE TABLE IF NOT EXISTS variable (name, timestamp)');
@@ -1232,8 +1300,10 @@ function _dbInit(tx) {
       var len = results.rows.length;
       apApp.settings.profileUID = 1;
       if (len === 0) {
+        apApp.settings.registation = true;
         _getFirstContent('_registerUser');
       } else {
+        apApp.settings.registation = false;
         apApp.settings.userProfile = results.rows.item(0);
         _dbSuccessHandler(tx);
       }
@@ -1749,9 +1819,11 @@ function _swipeChildrenInfo(direction) {
 }
 
 function _saveChildSuccessCB(tx, results) {
+
   var reloadPage = false,
     cid = results.insertId,
     villageSize = $('#assign-village li.visible').size();
+  console.log('_saveChildSuccessCB cid' + cid);
   if (villageSize > 0) {
     $('#assign-village li.visible').each(function(idx, el) {
       if (idx + 1 == villageSize) {
@@ -1826,7 +1898,7 @@ function _saveChildSuccessCB(tx, results) {
 //   $('#assign-village option:selected').prop('selected', false);
 //   $('#add-child-photo-img').attr('src', '');
 //   $('#add-child-photo').hide();
-//   $('#add-child-upload-photo').show();
+//   $('#add-child-uploadupload-photo').show();
 
 //   // add my child in navigation menu
 //   $('nav[data-role="panel"] li.search-holder')
@@ -2518,7 +2590,6 @@ function _uploadUserChilds(user) {
       'LEFT JOIN child_index AS ci ON ci.cid = c.cid ' +
       'LEFT JOIN relationships AS r ON r.rid = ci.relationship ' +
       'LEFT JOIN users AS ur ON ci.uid = ur.uid ' +
-
       'WHERE c.updated > ? AND c.uid = ?', [time, user.uid], _selectUploadChilds, function(err) {
         _errorHandler(err, 2278)
       });
@@ -2720,7 +2791,7 @@ function _uploadQueryExclude() {
   if (apApp.settings.uploadQueryExclude.goals === true &&
     apApp.settings.uploadQueryExclude.child === true) {
     _uploadGoalsofChildren();
-    if (apApp.settings.cron != 0) {
+    if (!apApp.settings.registation) {
       _getContent('_dbQuery');
     } else {
       _queryExclude('_dbQuery');
@@ -2927,16 +2998,6 @@ function _downloadUserPhoto(user) {
   });
 }
 
-function onFileSystemSuccess(fileSystem) {
-  apApp.settings.FullPath = fileSystem.root.fullPath;
-  //_messagePopup('FullPath ' + apApp.settings.FullPath, false);
-}
-
-function _onFail(evt) {
-  _messagePopup('Error code ' + evt.target.error.code, true);
-
-}
-
 function _downloadChildPhoto(child) {
   var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
   var url = encodeURI(child.photo_url);
@@ -2949,6 +3010,15 @@ function _downloadChildPhoto(child) {
   }, function(error) {
     _messagePopup('There was an error downloading image', true);
   });
+}
+
+function onFileSystemSuccess(fileSystem) {
+  apApp.settings.FullPath = fileSystem.root.fullPath;
+}
+
+function _onFail(evt) {
+  _messagePopup('Error code ' + evt.target.error.code, true);
+
 }
 
 function _importUsersToApp(users, key) {
@@ -3020,7 +3090,7 @@ function _queryExcludeInvite(key) {
       apApp.settings.queryExclude[key] = true;
       _queryExclude('_dbQuery');
     }
-  }, 1000 * 10);
+  }, 1000 * 2);
 }
 
 function _createUserProfile() {
@@ -3195,6 +3265,10 @@ function _getFirstContent(key) {
         _addGoals(response.goals, key);
       }
       _queryExclude(key);
+    });
+  apApp.settings.dbPromiseTracker.transaction(function(tx) {
+      tx.executeSql('INSERT INTO variable (name, timestamp) ' +
+        'VALUES ("cron", ?)', [apApp.settings.timestamp]);
     });
 }
 

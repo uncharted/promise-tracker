@@ -473,7 +473,7 @@ div.copyright img {
   z-index: 400;
 }
 .main .child.item a.edit-child span {
-  background: url(../images/icons.png) no-repeat -154px -67px;
+  background: #fff url(../images/icons.png) no-repeat -154px -67px;
   background-size: 200px 200px;
   display: block;
   width: 22px;
