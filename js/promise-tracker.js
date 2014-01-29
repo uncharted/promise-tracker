@@ -1129,45 +1129,6 @@ function _updateChild(child,users) {
     }, function(err) {
       _errorHandler(err, 1127)
     });
-        tx.executeSql('SELECT uid, uid_origin FROM users',[],function(tx, results){
-        var len = results.rows.length;
-		if (len){
-			for (var i = 0; i < len; i++) {
-				var item = results.rows.item(i);
-				users[item.uid_origin] = item.uid;
-			}
-			 $.each(childs.children, function(i, child) {
-			 	tx.executeSql('INSERT INTO childs (cid_origin, uid, first_name, ' +
-				    'last_name, birth_date, age, updated, created, status) ' +
-				    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.cid_origin, users[child.uid_origin], child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
-				    function(tx, results) {
-				      _messagePopup('Child ' + child.first_name);
-				      apApp.settings.queryExclude.childs = true;
-				      _queryExclude(key);
-				      var cid = results.insertId;
-				      if (child.photo != undefined) _downloadChildPhoto(child);
-				      if (child.child_index != undefined) {
-				        //create child_index
-				        $.each(child.child_index, function(i, relationship) {
-				          if (users[relationship.uid] != undefined) {
-				            tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
-				              'VALUES (?, ?, ?)', [cid, users[relationship.uid], relationship.relationship],
-				              function(tx, results) {}, function(err) {
-				                _errorHandler(err, 1028)
-				              });
-				          }
-				        });
-				      }
-				    }, function(err) {
-				      _errorHandler(err, 1034)
-				    });
-			 	
-			 })
-		}
-	  },function(err){
-	  	_errorHandler(err, 1018);
-	  });
->>>>>>> 9658431943298ae1d31f2cdbf71909212bfc61f6
   });
 
 }
