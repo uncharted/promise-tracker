@@ -1080,8 +1080,12 @@ function _addChilds(childs,key){
         if (child.update == 1) {
           _updateChild(child,users);
         }
-        apApp.settings.queryExclude.childs = true;
-        _queryExclude(key);
+
+        setTimeout(function(){
+          apApp.settings.queryExclude.childs = true;
+          _queryExclude(key);
+        },1000*2);
+
        });
     }
     },function(err){
