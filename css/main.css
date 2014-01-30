@@ -462,8 +462,8 @@ div.copyright img {
 .main .child.item a.edit-child {
   display: block;
   position: absolute;
-  left: 10px;
-  bottom: 10px;
+  left: 0;
+  bottom: 0;
   width: 50px;
   height: 50px;
   overflow: hidden;
@@ -475,6 +475,9 @@ div.copyright img {
 .main .child.item a.edit-child span {
   background: #fff url(../images/icons.png) no-repeat -154px -67px;
   background-size: 200px 200px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
   display: block;
   width: 22px;
   height: 22px;
@@ -482,6 +485,9 @@ div.copyright img {
   position: absolute;
   left: 50%;
   top: 50%;
+  -webkit-box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
+  -moz-box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
+  box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
 }
 .main .child.item .title {
   position: absolute;
@@ -655,6 +661,10 @@ div.copyright img {
 .main .ui-field-contain label.ui-input-text,
 .main .ui-field-contain label.ui-select {
   margin: 0 15px 5px;
+}
+body .ui-select .ui-btn-icon-right .ui-btn-inner,
+body .ui-select .ui-li-has-count .ui-btn-inner {
+  padding-left: 0.4em;
 }
 body .main .ui-btn-inner,
 .main div.ui-input-text input.ui-input-text,
@@ -1056,8 +1066,8 @@ body .main .form .right-side div.ui-input-text:after {
   overflow: hidden;
 }
 .assign-village-holder a.ui-btn.submit {
-  /* float: right; */
-  /* margin-right: 0.6em; */
+  float: right;
+  margin-right: 0.6em;
 }
 .assign-village-holder .ui-icon-plus {
   display: none !important;
@@ -1270,7 +1280,7 @@ body .main .form .right-side div.ui-input-text:after {
   margin: 0 7px 5px;
   text-align: center;
   text-transform: uppercase;
-  opacity: 0.2;
+  opacity: 1;
 }
 .main .persons-inline li a {
   clear: left;
@@ -1347,6 +1357,9 @@ body .main .form .right-side div.ui-input-text:after {
 }
 .main .form.add-new-child .ui-field-contain {
   padding: 0 0 0.6em;
+}
+#goal-interval option:disabled {
+  display: none;
 }
 /* my childrens */
 .main .ui-listview.my-childrens {

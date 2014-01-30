@@ -15,6 +15,7 @@
     <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.cycle2.swipe.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.infieldlabel.min.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.validate.min.js"></script>
+    <!-- <script type="text/javascript" charset="utf-8" src="js/contrib/iscroll-probe.js"></script> -->
     <script type="text/javascript" charset="utf-8" src="js/promise-tracker.js"></script>
   </head>
   <body>
@@ -65,7 +66,7 @@
           <span id="goal-settings-first-name" class="title"></span>
         </article>
         <div class="form">
-          <h2 class="label">Improve vegetable intake</h2>
+          <h2 id="goal-settings-title" class="label"></h2>
           <form action="#" method="post" accept-charset="utf-8">
             <div class="ui-field-contain persons-holder">
               <div class="side-holder">
@@ -78,16 +79,15 @@
             <div class="ui-field-contain">
               <div class="side-holder">
                 <div class="left-side">
-                  <label for="goal-every">Every:</label>
+                  <label for="goal-repeat">Every:</label>
                 </div>
                 <div class="right-side">
-                  <select name="goal-every" id="goal-every" required="required">
+                  <select name="goal-repeat" id="goal-repeat" required="required">
                     <option value="" selected="selected">Select</option>
-                    <option value="hour">Hour</option>
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
+                    <option value="daily">Day</option>
+                    <option value="weekly">Week</option>
+                    <option value="monthly">Month</option>
+                    <option value="yearly">Year</option>
                   </select>
                 </div>
               </div>
@@ -110,11 +110,33 @@
                 <div class="right-side">
                   <select name="goal-interval" id="goal-interval" required="required">
                     <option value="" selected="selected">Select</option>
-                    <option value="1w">1 week</option>
-                    <option value="2w">2 weeks</option>
-                    <option value="3w">3 weeks</option>
-                    <option value="4w">4 weeks</option>
-                    <option value="5w">5 weeks</option>
+                    <option value="day-2">2 days</option>
+                    <option value="day-3">3 days</option>
+                    <option value="day-4">4 days</option>
+                    <option value="day-5">5 days</option>
+                    <option value="day-6">6 days</option>
+                    <option value="day-7">1 week</option>
+                    <option value="day-14">2 weeks</option>
+                    <option value="day-21">3 weeks</option>
+                    <option value="day-28">4 weeks</option>
+                    <option value="day-35">5 weeks</option>
+                    <option value="month-1">1 month</option>
+                    <option value="month-2">2 months</option>
+                    <option value="month-3">3 months</option>
+                    <option value="month-4">4 months</option>
+                    <option value="month-5">5 months</option>
+                    <option value="month-6">6 months</option>
+                    <option value="month-7">7 months</option>
+                    <option value="month-8">8 months</option>
+                    <option value="month-9">9 months</option>
+                    <option value="month-10">10 months</option>
+                    <option value="month-11">11 months</option>
+                    <option value="month-12">12 months</option>
+                    <option value="year-1">1 year</option>
+                    <option value="year-2">2 years</option>
+                    <option value="year-3">3 years</option>
+                    <option value="year-4">4 years</option>
+                    <option value="year-5">5 years</option>
                   </select>
                 </div>
               </div>

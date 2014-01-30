@@ -2,10 +2,16 @@ var apApp = apApp || {
   'settings': {}
 };
 (function($) {
-//apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
-apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
+// apApp.settings.mode = 'dev';
+apApp.settings.mode = 'prod';
+if (apApp.settings.mode == 'dev') {
+  apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
+}
+else {
+  apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
+}
 apApp.settings.cron = '';
-apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
+// apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
 apApp.settings.cron_safe_threshold = 2*60; // 2 minute;
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
 apApp.settings.dbPromiseTracker;
@@ -25,8 +31,18 @@ apApp.settings.userProfile = {};
 apApp.settings.goalsInvite = {};
 
 // device APIs are available
-document.addEventListener("deviceready", initApp, false);
-document.addEventListener("resume", resumeApp, false);
+if (apApp.settings.mode == 'dev') {
+  if ("deviceready" in window) {
+    document.addEventListener("deviceready", initApp, true);
+    // document.addEventListener("resume", resumeApp, false);
+  } else {
+    $(document).on('ready', initApp);
+  }
+}
+else {
+  document.addEventListener("deviceready", initApp, false);
+  // document.addEventListener("resume", resumeApp, false);
+}
 
 // Initialize All functions
 function initApp() {
@@ -42,10 +58,12 @@ function resumeApp() {
 // Connect database
 function db() {
   $.mobile.loading('show');
-  window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFileSystemSuccess, _onFail);
+  if (window.requestFileSystem !== undefined) {
+    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFileSystemSuccess, _onFail);
+  }
   apApp.settings.dbPromiseTracker = window.openDatabase("Database", "1.0", "PromiseTracker", 200000);
   apApp.settings.dbPromiseTracker.transaction(_dbInit, function(err) {
-    _errorHandler(err, 275)
+    _errorHandler(err, 275);
   });
 }
 
@@ -176,23 +194,44 @@ function html() {
                     _reloadPage();
                   }
                 }, function(err) {
-                  _errorHandler(err, 383)
+                  _errorHandler(err, 383);
                 });
             });
           } else {
             _reloadPage();
           }
         }, function(err) {
-          _errorHandler(err, 389)
+          _errorHandler(err, 389);
         });
     }, function(err) {
-      _errorHandler(err, 390)
+      _errorHandler(err, 390);
     });
     e.preventDefault();
   });
 }
 
 function events() {
+  if (window.plugin != undefined) {
+    window.plugin.notification.local.onadd = function (id, state, json) {
+      _messagePopup('Reminder id:' + id + ' has been added successfully.', false);
+    }
+    window.plugin.notification.local.onclick = function (id, state, json) {
+      apApp.settings.dbPromiseTracker.transaction(function(tx) {
+        tx.executeSql('SELECT r.title, r.message ' +
+          'FROM reminder AS r ' +
+          'WHERE r.rid = ?', [id], function(tx, results) {
+            _messagePopup(id, true);
+            var len = results.rows.length;
+            if (len) {
+              var item = results.rows.item(0);
+              _messagePopup('Reminder: ' + item.title + '. ' + item.message + '.', false);
+            }
+          }, function(err) {
+          _errorHandler(err, 233);
+        });
+      });
+    };
+  }
   // jquery mobile events
   $(document)
     .on('pagebeforeshow', function(e) { // event pagebeforeshow
@@ -248,76 +287,48 @@ function events() {
                         }
                       }
                     }, function(err) {
-                      _errorHandler(err, 452)
+                      _errorHandler(err, 452);
                     });
                 }
               }
             }, function(err) {
-              _errorHandler(err, 455)
+              _errorHandler(err, 455);
             });
         });
       }
     })
     .on('pagebeforeshow', '#goal-settings', function(e, data) {
-      // console.dir(data);
-      // var $form = data.prevPage.find('form');
-      // var getData = {
-      //   'cid': $(window).data('cid'),
-      //   'topic': parseInt($form.find('select.select-topic option:checked').val()),
-      //   'status': ($form.find('input.public-goal').prop('checked')) ? 1 : 0,
-      //   'title': $form.find('input.goal').val(),
-      //   'age': parseInt($form.find('button.submit-goal').data('age')),
-      //   'first_name': $form.find('button.submit-goal').data('first-name'),
-      //   'image_path': $form.find('button.submit-goal').data('image-path'),
-      //   'completed': 0
-      // };
-      var cid = $(window).data('cid');
-      if (cid !== undefined) {
-        apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          tx.executeSql('SELECT c.first_name, c.image_path ' +
-            'FROM childs AS c ' +
-            'WHERE c.cid = ?', [cid],
-            function(tx, results) {
-              var len = results.rows.length;
-              if (len) {
-                var item = results.rows.item(0);
-                console.dir(item);
-                if (item !== undefined) {
-                  $('#goal-settings-child-image').attr('src', item.image_path);
-                  $('#goal-settings-first-name').text(item.first_name);
-
-                  //   $('#edit-child-fname').text(item.first_name);
-                  //   $('#edit-child-first-name').val(item.first_name);
-                  //   $('#edit-child-last-name').val(item.last_name);
-                  //   $('#edit-child-birth-date').val(item.birth_date).change();
-                  //   $('#edit-child-photo-img').attr('src', item.image_path);
-                  //   // assign-village
-                  //   tx.executeSql('SELECT u.uid, ci.relationship ' +
-                  //     'FROM users AS u ' +
-                  //     'LEFT JOIN child_index AS ci ON ci.uid = u.uid ' +
-                  //     'WHERE ci.cid = ? ' +
-                  //     'ORDER BY ci.uid ASC', [cid],
-                  //     function(tx, results) {
-                  //       var len = results.rows.length;
-                  //       if (len) {
-                  //         $('#edit-assign-village li.visible')
-                  //           .addClass('hidden').removeClass('visible');
-                  //         for (var i = 0; i < len; i++) {
-                  //           var item = results.rows.item(i);
-                  //           $('#edit-assign-village li[data-uid="' + item.uid + '"]')
-                  //             .addClass('visible').removeClass('hidden')
-                  //             .find('select').val(item.relationship).change();
-                  //         }
-                  //       }
-                  //     }, function(err) {
-                  //       _errorHandler(err, 452)
-                  //     });
-                }
-              }
-            }, function(err) {
-              _errorHandler(err, 290)
-            });
-        });
+      var winData = $(window).data();
+      $('#goal-settings-child-image').attr('src', winData.image_path);
+      $('#goal-settings-first-name').text(winData.first_name);
+      $('#goal-settings-title').text(winData.title);
+      $('#goal-repeat').val('').change();
+      $('#goal-time').val('').change();
+      $('#goal-interval').val('').change();
+    })
+    .on('change', '#goal-repeat', function(e) {
+      var itemValue = $(this).val();
+      $('#goal-interval option').prop({
+        'disabled': false,
+      });
+      $('#goal-interval').val('').change();
+      switch (itemValue) {
+        case 'daily':
+          $('#goal-interval option[value*="monthly"]').prop('disabled', true);
+          $('#goal-interval option[value*="yearly"]').prop('disabled', true);
+          break;
+        case 'weekly':
+          $('#goal-interval option[value*="daily"]').prop('disabled', true);
+          break;
+        case 'monthly':
+          $('#goal-interval option[value*="daily"]').prop('disabled', true);
+          $('#goal-interval option[value*="weekly"]').prop('disabled', true);
+          break;
+        case 'yearly':
+          $('#goal-interval option[value*="daily"]').prop('disabled', true);
+          $('#goal-interval option[value*="weekly"]').prop('disabled', true);
+          $('#goal-interval option[value*="monthly"]').prop('disabled', true);
+          break;
       }
     })
     .on('pagechange', function(e) { // event pagechange
@@ -326,7 +337,6 @@ function events() {
       var pageId = $.mobile.activePage.attr('id');
       $pager.find('li.active').removeClass('active');
       $pager.find('a[href*="' + pageId + '"]').parent().addClass('active');
-
       if ($.fn.inFieldLabels) {
         $('label.placeholder').each(function(index, el) {
           var labelName = $(this).attr('for');
@@ -401,19 +411,19 @@ function events() {
         $labelFor.show();
       }
     })
-  // event swipe child image
-  .on('swipeleft swiperight', '[data-role="page"] .child.item.inner',
-    function(e) {
-      switch (e.type) {
-        case 'swipeleft':
-          _swipeChildrenInfo('next'); // swipe events on children page
-          break;
-        case 'swiperight':
-          _swipeChildrenInfo('prev'); // swipe events on children page
-          break;
+    // event swipe child image
+    .on('swipeleft swiperight', '[data-role="page"] .child.item.inner',
+      function(e) {
+        switch (e.type) {
+          case 'swipeleft':
+            _swipeChildrenInfo('next'); // swipe events on children page
+            break;
+          case 'swiperight':
+            _swipeChildrenInfo('prev'); // swipe events on children page
+            break;
+        }
       }
-    }
-  )
+    )
     .on('swipeleft swiperight click', 'li.checked-goal', function(e) {
       switch (e.type) {
         case 'swipeleft':
@@ -457,10 +467,10 @@ function events() {
                 _messagePopup('Goal was updated.', false);
                 $.mobile.loading('hide');
               }, function(err) {
-                _errorHandler(err, 597)
+                _errorHandler(err, 597);
               });
           }, function(err) {
-            _errorHandler(err, 598)
+            _errorHandler(err, 598);
           });
           e.preventDefault();
           break;
@@ -492,7 +502,7 @@ function events() {
                       'VALUES (?, ?, 0)', [data.cid, data.uid], function(tx, results) {
                         _messagePopup('Person has been added.', false);
                       }, function(err) {
-                        _errorHandler(err, 628)
+                        _errorHandler(err, 628);
                       });
                   });
                 }
@@ -507,7 +517,7 @@ function events() {
                     tx.executeSql('DELETE FROM child_index WHERE cid = ? AND uid = ?', [data.cid, data.uid], function(tx, results) {
                       _messagePopup('Person has been removed.', false);
                     }, function(err) {
-                      _errorHandler(err, 642)
+                      _errorHandler(err, 642);
                     });
                   });
                 }
@@ -552,20 +562,18 @@ function events() {
       } else {
         _handlerInvitation(invite_uid, accepted);
       }
-
       $popup.popup('close');
       e.preventDefault();
-
     })
-  // .on('click', '.ui-popup-container .popup-buttons a.invite', function(e) {
-  //   $(this).parents('div[data-role="popup"]').popup('close');
-  //   e.preventDefault();
-  // })
-  .on('click', 'a.main-menu-btn', function(e) {
-    $(this).parents('div[data-role="page"]')
-      .find('[data-role="panel"]').panel('open');
-    e.preventDefault();
-  })
+    // .on('click', '.ui-popup-container .popup-buttons a.invite', function(e) {
+    //   $(this).parents('div[data-role="popup"]').popup('close');
+    //   e.preventDefault();
+    // })
+    .on('click', 'a.main-menu-btn', function(e) {
+      $(this).parents('div[data-role="page"]')
+        .find('[data-role="panel"]').panel('open');
+      e.preventDefault();
+    })
     .on('click', 'h1.logo', function(e) { // set logo as link to home page
       $.mobile.changePage('#home', {
         transition: "slide",
@@ -589,10 +597,10 @@ function events() {
               _deleteGoal(tx, results, data, $goal);
             },
             function(err) {
-              _errorHandler(err, 716)
+              _errorHandler(err, 716);
             });
         }, function(err) {
-          _errorHandler(err, 717)
+          _errorHandler(err, 717);
         });
       }
     })
@@ -628,10 +636,10 @@ function events() {
             _messagePopup('Goal "' + data.title + '" has been added', false);
           },
           function(err) {
-            _errorHandler(err, 751)
+            _errorHandler(err, 751);
           });
       }, function(err) {
-        _errorHandler(err, 752)
+        _errorHandler(err, 752);
       });
       e.preventDefault();
     })
@@ -702,7 +710,7 @@ function events() {
                 }
                 $('#add-goal-' + globalCid).find('form').trigger('reset');
               }, function(err) {
-                _errorHandler(err, 821)
+                _errorHandler(err, 821);
               });
           });
         } else {
@@ -731,18 +739,89 @@ function events() {
       e.preventDefault();
     })
     .on('click', '#submit-goal-settings', function(e) {
+      // if (!$form.find('div.input-goal input').val()) {
+      //   _messagePopup('Text field is required.', true);
+      // } else {
+        $.mobile.loading('show');
+        var data = $(window).data();
+        // insert new goal
+        apApp.settings.dbPromiseTracker.transaction(function(tx) {
+          var timestp = parseInt(new Date().getTime() / 1000); // timestamp
+          tx.executeSql('INSERT INTO goals (gid_origin, uid_origin, uid, title, featured, updated, created, status) ' +
+            'VALUES (0, 0, ?, ?, 0, ?, ?, ?)', [apApp.settings.profileUID, data.title, timestp, timestp, data.status],
+            function(tx, results) {
+              data.gid = results.insertId;
+              tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
+                'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
+                function(tx, results) {
+                   tx.executeSql('INSERT INTO age (entity_id, type, age, delta) ' +
+                    'VALUES (?, "goal", ?, 0)', [data.gid, data.age],
+                    function(tx, results) {
+                      tx.executeSql('INSERT INTO topic (entity_id, type, topic, delta) ' +
+                        'VALUES (?, "goal", ?, 0)', [data.gid, data.topic],
+                        function(tx, results) {
+                          data.goalRepeat = $('#goal-repeat').val();
+                          data.goalTime = $('#goal-time').val();
+                          data.goalInterval = $('#goal-interval').val();
+                          data.start_date = new Date();
+                          data.end_date = new Date();
 
+                          var res = data.goalTime.split(':');
+                          data.start_date.setHours(res[0], res[1], 0, 0);
+                          data.end_date.setHours(res[0], res[1], 0, 0);
+
+                          var goalInterval = data.goalInterval.split('-');
+                          var days = parseInt(goalInterval[1]);
+                          switch(goalInterval[0]) {
+                            case 'day':
+                              data.end_date.setDate(data.start_date.getDate() + days);
+                              break;
+                            case 'month':
+                              data.end_date.setMonth(data.start_date.getMonth() + days);
+                              break;
+                            case 'year':
+                              data.end_date.setFullYear(data.start_date.getFullYear() + days);
+                              break;
+                          }
+                          var startDate = parseInt(data.start_date.getTime() / 1000),
+                              endDate = parseInt(data.end_date.getTime() / 1000);
+                          tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date) ' +
+                            'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, startDate, endDate],
+                            function(tx, results) {
+                              data.rid = results.insertId;
+                              tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid) ' +
+                                'VALUES (?, ?, ?, ?)', [data.rid, apApp.settings.profileUID, data.cid, data.gid],
+                                function(tx, results) {
+                                  _addNewGoalSuccessCB(tx, results, data);
+                                }, function(err) {
+                                  _errorHandler(err, 741);
+                                });
+                            }, function(err) {
+                              _errorHandler(err, 745);
+                            });
+                        }, function(err) {
+                          _errorHandler(err, 738);
+                        });
+                    }, function(err) {
+                      _errorHandler(err, 730);
+                    });
+                }, function(err) {
+                  _errorHandler(err, 724);
+                });
+            }, function(err) {
+              _errorHandler(err, 741);
+            });
+        }, function(err) {
+          _errorHandler(err, 744);
+        });
+      // }
+      e.preventDefault();
     })
     .on('click', 'button.submit-goal', function(e) {
-      // $.mobile.changePage('#goal-settings', {
-      //   allowSamePageTransition: true,
-      //   transition: 'slide'
-      // });
       var $form = $(this).parents('form');
       if (!$form.find('div.input-goal input').val()) {
         _messagePopup('Text field is required.', true);
       } else {
-        $.mobile.loading('show');
         var $form = $(this).parents('form');
         var data = {
           'cid': $(window).data('cid'),
@@ -755,39 +834,10 @@ function events() {
           'image_path': $(this).data('image-path'),
           'completed': 0
         };
-        // insert new goal
-        apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          var timestp = parseInt(new Date().getTime() / 1000); // timestamp
-          tx.executeSql('INSERT INTO goals (gid_origin, uid_origin, uid, ' +
-            'title, featured, updated, created, status) ' +
-            'VALUES (0, 0, ?, ?, 0, ?, ?, ?)', [apApp.settings.profileUID, data.title, timestp, timestp, data.status],
-            function(tx, results) {
-              data.gid = results.insertId;
-              tx.executeSql('INSERT INTO goal_index (gid, cid, ' +
-                'uid, completed, updated) ' +
-                'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
-                function(tx, results) {}, function(err) {
-                  _errorHandler(err, 877)
-                });
-              tx.executeSql('INSERT INTO age (entity_id, type, ' +
-                'age, delta) ' +
-                'VALUES (?, "goal", ?, 0)', [data.gid, data.age],
-                function(tx, results) {}, function(err) {
-                  _errorHandler(err, 881)
-                });
-              tx.executeSql('INSERT INTO topic (entity_id, type, ' +
-                'topic, delta) ' +
-                'VALUES (?, "goal", ?, 0)', [data.gid, data.topic],
-                function(tx, results) {
-                  _addNewGoalSuccessCB(tx, results, data);
-                }, function(err) {
-                  _errorHandler(err, 887)
-                });
-            }, function(err) {
-              _errorHandler(err, 888)
-            });
-        }, function(err) {
-          _errorHandler(err, 889)
+        $(window).data(data);
+        $.mobile.changePage('#goal-settings', {
+          allowSamePageTransition: true,
+          transition: 'slide'
         });
       }
       e.preventDefault();
@@ -832,10 +882,10 @@ function events() {
           function(tx, results) {
             _messagePopup('Updated', false);
           }, function(err) {
-            _errorHandler(err, 932)
+            _errorHandler(err, 932);
           });
       }, function(err) {
-        _errorHandler(err, 933)
+        _errorHandler(err, 933);
       });
       e.preventDefault();
     });
@@ -869,10 +919,10 @@ function events() {
             child.last_name, child.birth_date, child.image_path, child.age, ts, ts
           ],
           _saveChildSuccessCB, function(err) {
-            _errorHandler(err, 965)
+            _errorHandler(err, 965);
           });
       }, function(err) {
-        _errorHandler(err, 966)
+        _errorHandler(err, 966);
       });
     }
     e.preventDefault();
@@ -893,7 +943,7 @@ function _reloadPage() {
 // Transaction success callback
 function _dbSuccessHandler(tx) {
   tx.executeSql('SELECT timestamp FROM variable WHERE name = "cron"', [], _selectCronVariableCB, function(err) {
-    _errorHandler(err, 41)
+    _errorHandler(err, 41);
   });
 }
 
@@ -905,12 +955,18 @@ function _selectCronVariableCB(tx, results) {
     apApp.settings.cron = 0;
   }
   var time = apApp.settings.timestamp - apApp.settings.cron;
-  if (time > apApp.settings.cron_safe_threshold || apApp.settings.registation) {
-    _uploadContent();
-    // _getContent();
+  if (time > apApp.settings.cron_safe_threshold) {
+    if (apApp.settings.mode == 'dev') {
+      _getContent();
+    }
+    else {
+      _uploadContent();
+    }
   } else {
-    _getInvitation();
-    _getYourInvitation();
+    if (apApp.settings.mode != 'dev') {
+      _getInvitation();
+      _getYourInvitation();
+    }
     _queryExclude('_dbQuery');
   }
 }
@@ -933,10 +989,10 @@ function _addTopics(topics, key) {
             _queryExclude(key);
           }
         }, function(err) {
-          _errorHandler(err, 80)
+          _errorHandler(err, 80);
         });
     }, function(err) {
-      _errorHandler(err, 81)
+      _errorHandler(err, 81);
     });
   });
 }
@@ -965,10 +1021,10 @@ function _addTips(tips, key) {
             _insertAge(tip.age, results.insertId, 'tip');
             _insertTopics(tip.topics, results.insertId, 'tip');
           }, function(err) {
-            _errorHandler(err, 108)
+            _errorHandler(err, 108);
           });
       }, function(err) {
-        _errorHandler(err, 109)
+        _errorHandler(err, 109);
       });
     }
     if (tip.update == 1) {
@@ -992,7 +1048,7 @@ function _addTips(tips, key) {
         // update tips content
         tx.executeSql('UPDATE tips SET title = ?, body = ?, created = ?, updated = ? WHERE nid = ?', [data.title, data.body, data.created, data.updated, data.nid]);
       }, function(err) {
-        _errorHandler(err, 131)
+        _errorHandler(err, 131);
       });
     }
   });
@@ -1028,10 +1084,10 @@ function _addGoals(goals, key) {
             _insertAge(goal.age, results.insertId, 'goal');
             _insertTopics(goal.topics, results.insertId, 'goal');
           }, function(err) {
-            _errorHandler(err, 165)
+            _errorHandler(err, 165);
           });
       }, function(err) {
-        _errorHandler(err, 166)
+        _errorHandler(err, 166);
       });
     }
     if (goal.update == 1) {
@@ -1057,7 +1113,7 @@ function _addGoals(goals, key) {
         tx.executeSql('UPDATE goals SET title = ?, featured = ?, updated = ?, created = ?, status=?, uid_origin=? WHERE gid_origin = ?', [data.title, data.featured, data.updated, data.created, data.status, data.uid_origin, data.gid_origin]);
 
       }, function(err) {
-        _errorHandler(err, 190)
+        _errorHandler(err, 190);
       });
     }
   });
@@ -1111,27 +1167,27 @@ function _insertChild(child,users){
             tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
               'VALUES (?, ?, ?)', [cid, users[relationship.uid], relationship.relationship],
               function(tx, results) {}, function(err) {
-                _errorHandler(err, 1028)
+                _errorHandler(err, 1028);
               });
           }
         });
       }
     }, function(err) {
-      _errorHandler(err, 1034)
+      _errorHandler(err, 1034);
     });
   });
-  
+
 }
 
 function _updateChild(child,users) {
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
-    tx.executeSql('UPDATE childs SET first_name = ? last_name = ?, birth_date = ?, age = ?,' + 
+    tx.executeSql('UPDATE childs SET first_name = ? last_name = ?, birth_date = ?, age = ?,' +
     'updated = ?, created = ?, status = ?) ' +
     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
     function(tx, results) {
       _messagePopup('Update child ' + child.first_name );
     }, function(err) {
-      _errorHandler(err, 1127)
+      _errorHandler(err, 1127);
     });
   });
 
@@ -1143,7 +1199,7 @@ function _insertAge(ages, id, type) {
       tx.executeSql('INSERT INTO age (entity_id, type, age, delta) ' +
         'VALUES (?, ?, ?, ?)', [id, type, age, delta]);
     }, function(err) {
-      _errorHandler(err, 200)
+      _errorHandler(err, 200);
     });
   });
 }
@@ -1154,7 +1210,7 @@ function _insertTopics(topics, id, type) {
       tx.executeSql('INSERT INTO topic (entity_id, type, topic, delta) ' +
         'VALUES (?, ?, ?, ?)', [id, type, topic, delta]);
     }, function(err) {
-      _errorHandler(err, 209)
+      _errorHandler(err, 209);
     });
   });
 }
@@ -1171,7 +1227,7 @@ function _queryExclude(key) {
     switch (key) {
       case '_dbQuery':
         apApp.settings.dbPromiseTracker.transaction(_dbQuery, function(err) {
-          _errorHandler(err, 1106)
+          _errorHandler(err, 1106);
         });
         break;
       case '_registerUser':
@@ -1204,8 +1260,10 @@ function _getContent(key) {
         apApp.settings.queryExclude.childs = false;
         _addChilds(response.childs,key);
       }
-      _getInvitation();
-      _getYourInvitation();
+      if (apApp.settings.mode != 'dev') {
+        _getInvitation();
+        _getYourInvitation();
+      }
       _queryExclude(key);
     });
 
@@ -1225,19 +1283,19 @@ function _getContent(key) {
 // Initialize the database
 function _dbInit(tx) {
   tx.executeSql('DROP TABLE IF EXISTS relationships');
-  /*tx.executeSql('DROP TABLE IF EXISTS variable');
-  tx.executeSql('DROP TABLE IF EXISTS users');
-  tx.executeSql('DROP TABLE IF EXISTS childs');
-  tx.executeSql('DROP TABLE IF EXISTS child_index');
-  tx.executeSql('DROP TABLE IF EXISTS relationships');
-  tx.executeSql('DROP TABLE IF EXISTS goals');
-  tx.executeSql('DROP TABLE IF EXISTS goal_index');
-  tx.executeSql('DROP TABLE IF EXISTS topics');
-  tx.executeSql('DROP TABLE IF EXISTS tips');
-  tx.executeSql('DROP TABLE IF EXISTS age');
-  tx.executeSql('DROP TABLE IF EXISTS topic');
-  tx.executeSql('DROP TABLE IF EXISTS reminder');
-  tx.executeSql('DROP TABLE IF EXISTS reminder_index');*/
+  // tx.executeSql('DROP TABLE IF EXISTS variable');
+  // tx.executeSql('DROP TABLE IF EXISTS users');
+  // tx.executeSql('DROP TABLE IF EXISTS childs');
+  // tx.executeSql('DROP TABLE IF EXISTS child_index');
+  // tx.executeSql('DROP TABLE IF EXISTS relationships');
+  // tx.executeSql('DROP TABLE IF EXISTS goals');
+  // tx.executeSql('DROP TABLE IF EXISTS goal_index');
+  // tx.executeSql('DROP TABLE IF EXISTS topics');
+  // tx.executeSql('DROP TABLE IF EXISTS tips');
+  // tx.executeSql('DROP TABLE IF EXISTS age');
+  // tx.executeSql('DROP TABLE IF EXISTS topic');
+  // tx.executeSql('DROP TABLE IF EXISTS reminder');
+  // tx.executeSql('DROP TABLE IF EXISTS reminder_index');
 
   // create tables
   tx.executeSql('CREATE TABLE IF NOT EXISTS variable (name, timestamp)');
@@ -1265,8 +1323,10 @@ function _dbInit(tx) {
     'age INTEGER, delta INTEGER)');
   tx.executeSql('CREATE TABLE IF NOT EXISTS topic (entity_id INTEGER, type, ' +
     'topic INTEGER, delta INTEGER)');
-  tx.executeSql('CREATE TABLE IF NOT EXISTS reminder (rid INTEGER PRIMARY KEY, rid_origin INTEGER, cid INTEGER, every, at, for)');
-  tx.executeSql('CREATE TABLE IF NOT EXISTS reminder_index (rid INTEGER, topic INTEGER, delta INTEGER)');
+  tx.executeSql('CREATE TABLE IF NOT EXISTS reminder (rid INTEGER PRIMARY KEY, ' +
+    'rid_origin INTEGER, title, message, repeat, time, interval, start_date, end_date)');
+  tx.executeSql('CREATE TABLE IF NOT EXISTS reminder_index (rid INTEGER, ' +
+    'uid INTEGER, cid INTEGER, gid INTEGER)');
 
   // Create relationships
   tx.executeSql('INSERT INTO relationships (rid, title) VALUES (1, "Father")');
@@ -1296,7 +1356,7 @@ function _dbInit(tx) {
     }
     $('select.relationship').append(apApp.settings.relationships);
   }, function(err) {
-    _errorHandler(err, 1030)
+    _errorHandler(err, 1030);
   });
 
   tx.executeSql('SELECT * FROM users AS u WHERE u.uid = 1', [],
@@ -1312,11 +1372,35 @@ function _dbInit(tx) {
         _dbSuccessHandler(tx);
       }
     }, function(err) {
-      _errorHandler(err, 1045)
+      _errorHandler(err, 1045);
     });
 }
 
 function _dbQuery(tx) {
+  var timestamp = parseInt(new Date().getTime() / 1000);
+  tx.executeSql('SELECT r.rid, r.end_date ' +
+    'FROM reminder AS r ' +
+    'WHERE r.end_date < ?', [timestamp], function(tx, results) {
+      var len = results.rows.length;
+      if (len) {
+        for (var i = 0; i < len; i++) {
+          var item = results.rows.item(i);
+          if (window.plugin != undefined) {
+            window.plugin.notification.local.cancel(item.rid);
+          }
+          tx.executeSql('DELETE FROM reminder WHERE rid = ?',[item.rid],
+            function(tx, results) {}, function(err) {
+              _errorHandler(err, 1310);
+            });
+          tx.executeSql('DELETE FROM reminder_index WHERE rid = ?',[item.rid],
+            function(tx, results) {}, function(err) {
+              _errorHandler(err, 1314);
+            });
+        }
+      }
+    }, function(err) {
+      _errorHandler(err, 1319);
+    });
   tx.executeSql('SELECT DISTINCT(c.cid), t.title, t.body, a.age, topic.topic ' +
     'FROM childs AS c ' +
     'INNER JOIN age AS a ON a.age = c.age ' +
@@ -1349,12 +1433,12 @@ function _dbQuery(tx) {
         }
       }
     }, function(err) {
-      _errorHandler(err, 1080)
+      _errorHandler(err, 1080);
     });
 
   tx.executeSql('SELECT u.uid, u.image_path, u.name, u.address, u.email ' +
     'FROM users AS u', [], _selectUsersSuccessCB, function(err) {
-      _errorHandler(err, 1083)
+      _errorHandler(err, 1083);
     });
 
   tx.executeSql('SELECT c.image_path, c.cid, c.first_name, c.age, ' +
@@ -1364,7 +1448,7 @@ function _dbQuery(tx) {
     // 'LEFT JOIN child_index AS ci ON ci.cid = c.cid ' +
     'LEFT JOIN goals AS g ON gi.gid = g.gid ' +
     'ORDER BY c.cid DESC, gi.completed ASC', [], _selectChildSuccessCB, function(err) {
-      _errorHandler(err, 1091)
+      _errorHandler(err, 1091);
     });
 
   tx.executeSql('SELECT c.image_path, c.cid, c.first_name, c.age, g.title, ' +
@@ -1375,7 +1459,7 @@ function _dbQuery(tx) {
     'LEFT JOIN goal_index AS gi ON gi.gid = g.gid ' +
     'WHERE a.type = "goal" ' +
     'ORDER BY g.title ASC', [], _selectSearchPageSuccessCB, function(err) {
-      _errorHandler(err, 1100)
+      _errorHandler(err, 1100);
     });
 
   // village-goals
@@ -1398,7 +1482,7 @@ function _dbQuery(tx) {
         $('#village-goals li:first').after(goals);
       }
     }, function(err) {
-      _errorHandler(err, 1121)
+      _errorHandler(err, 1121);
     });
 }
 
@@ -1461,7 +1545,7 @@ function _selectUsersSuccessCB(tx, results) {
           _messagePopup('Profile has been updated.', false);
         });
     }, function(err) {
-      _errorHandler(err, 1185)
+      _errorHandler(err, 1185);
     });
   });
 }
@@ -1517,7 +1601,7 @@ function _selectChildSuccessCB(tx, results) {
               $('#my-childrens li:last').after(myChildren);
             }
           }, function(err) {
-            _errorHandler(err, 1091)
+            _errorHandler(err, 1091);
           }
         );
         var $panel = $('#home #main-menu').clone(),
@@ -1553,7 +1637,7 @@ function _selectChildSuccessCB(tx, results) {
         }
       }
     }, function(err) {
-      _errorHandler(err, 1263)
+      _errorHandler(err, 1263);
     });
     // assign-village
     tx.executeSql('SELECT u.uid, u.name, u.image_path ' +
@@ -1576,7 +1660,7 @@ function _selectChildSuccessCB(tx, results) {
           });
         }
       }, function(err) {
-        _errorHandler(err, 1284)
+        _errorHandler(err, 1284);
       });
     // tx.executeSql('SELECT ci.cid, ci.relationship ' +
     //   'FROM users AS u ' +
@@ -1733,7 +1817,7 @@ function _captureProfilePhotoSuccess(imageURI) {
               function(tx, results) {
                 _messagePopup('Photo was uploaded successfully.', false);
               }, function(err) {
-                _errorHandler(err, 1437)
+                _errorHandler(err, 1437);
               });
           }
         } else {
@@ -1744,10 +1828,10 @@ function _captureProfilePhotoSuccess(imageURI) {
           $('#create-profile-upload-photo').hide();
         }
       }, function(err) {
-        _errorHandler(err, 1446)
+        _errorHandler(err, 1446);
       });
   }, function(err) {
-    _errorHandler(err, 1447)
+    _errorHandler(err, 1447);
   });
   $.mobile.activePage.find('div[data-role="popup"]').popup('close');
 }
@@ -1823,11 +1907,9 @@ function _swipeChildrenInfo(direction) {
 }
 
 function _saveChildSuccessCB(tx, results) {
-
   var reloadPage = false,
     cid = results.insertId,
     villageSize = $('#assign-village li.visible').size();
-  console.log('_saveChildSuccessCB cid' + cid);
   if (villageSize > 0) {
     $('#assign-village li.visible').each(function(idx, el) {
       if (idx + 1 == villageSize) {
@@ -1842,7 +1924,7 @@ function _saveChildSuccessCB(tx, results) {
             _reloadPage();
           }
         }, function(err) {
-          _errorHandler(err, 1536)
+          _errorHandler(err, 1536);
         });
     });
   } else {
@@ -1850,131 +1932,25 @@ function _saveChildSuccessCB(tx, results) {
   }
 }
 
-// function _saveChildIndexSuccessCB(tx, results, child) {
-//   child.goals = [];
-//   tx.executeSql('SELECT DISTINCT(g.gid), g.title, gi.completed ' +
-//     'FROM goals g ' +
-//     'LEFT JOIN goal_index AS gi ON gi.gid = g.gid ' +
-//     'LEFT JOIN age AS a ON a.entity_id = g.gid ' +
-//     'WHERE a.age = ? ' +
-//     'ORDER BY g.title ASC', [child.age], function(tx, results) {
-//       var rows = results.rows;
-//       for (var i = 0; i < rows.length; i++) {
-//         var item = rows.item(i);
-//         child.goals.push({
-//           'gid': item.gid,
-//           'title': item.title,
-//           'completed': item.completed
-//         });
-//       }
-//       _addNewChild(tx, child);
-//     }, function(err) {_errorHandler(err, 1562)});
-// }
-
-// function _addNewChild(tx, child) {
-//   // set variables and get content.
-//   var options = {
-//     'isNew': true,
-//     'articleLinked': true,
-//     'pagerName': 'children-'
-//   }
-//   var searchOptions = {
-//     'pagerName': 'search-goals-'
-//   };
-//   var addGoalOptions = {
-//     'pagerName': 'add-goal-'
-//   }
-//   var article = _getHtml('article', child, options),
-//     myChildren = _getHtml('myChildren', child, options),
-//     childPage = _getHtml('childPage', child, options),
-//     addGoalPage = _getHtml('addGoalPage', child),
-//     goalsSearchPage = _getHtml('goalsSearchPage', child, options),
-//     addGoalPager = _getHtml('pagerItem', child, addGoalOptions),
-//     searchPager = _getHtml('pagerItem', child, searchOptions),
-//     pager = _getHtml('pagerItem', child, options),
-//     myChildLinkInMenu = _getHtml('myChildLinkInMenu', child, options),
-//     cid = child.cid;
-
-//   // clear input fields
-//   $('#add-child-first-name').val('');
-//   $('#add-child-last-name').val('');
-//   $('#add-child-birth-date').val('');
-//   $('#assign-village option:selected').prop('selected', false);
-//   $('#add-child-photo-img').attr('src', '');
-//   $('#add-child-photo').hide();
-//   $('#add-child-uploadupload-photo').show();
-
-//   // add my child in navigation menu
-//   $('nav[data-role="panel"] li.search-holder')
-//     .after(myChildLinkInMenu);
-//   $('.ui-page nav[data-role="panel"] [data-role="listview"]')
-//     .listview('refresh');
-//   // Add child link to settings page.
-//   $('#my-childrens li:first').after(myChildren);
-//   $('.ui-page #my-childrens').listview('refresh');
-//   $('#settings.ui-page').trigger('create');
-//   // add child to front page
-//   $(article).prependTo('#list-children');
-//   // add child page after home page
-//   $('#home').after(childPage).after(goalsSearchPage).after(addGoalPage);
-//   $('#' + options.pagerName + cid).page();
-//   $('#' + searchOptions.pagerName + cid).page();
-//   $('#' + addGoalOptions.pagerName + cid).page();
-//   $('#home #main-menu').clone().prependTo('#' + options.pagerName + cid);
-//   $('#' + options.pagerName + cid).trigger('pagecreate');
-//   $('#home #main-menu').clone().prependTo('#' + searchOptions.pagerName + cid);
-//   $('#' + searchOptions.pagerName + cid).trigger('pagecreate');
-//   $('#home #main-menu').clone().prependTo('#' + addGoalOptions.pagerName + cid);
-//   $('#' + addGoalOptions.pagerName + cid).trigger('pagecreate');
-
-//   // insert topics to selects
-//   tx.executeSql('SELECT tid, name FROM topics', [], function(tx, results) {
-//     var len = results.rows.length;
-//     if (len) {
-//       var selectOptions = '';
-//       for (var i = 0; i < len; i++) {
-//         var item = results.rows.item(i);
-//         selectOptions += '<option value="' + item.tid + '">';
-//         selectOptions += item.name;
-//         selectOptions += '</option>';
-//       }
-//       if (selectOptions) {
-//         $(selectOptions).appendTo('select.select-topic, select.in-topic');
-//       }
-//     }
-//   }, function(err) {_errorHandler(err, 1636)});
-
-//   // update pager
-//   $(pager).prependTo('div[id*="' + options.pagerName + '"] ul.list-pagerer');
-//   $(searchPager).prependTo('div[id*="' + searchOptions.pagerName + '"] ' +
-//     'ul.list-pagerer');
-//   $(addGoalPager).prependTo('div[id*="' + addGoalOptions.pagerName + '"] ' +
-//     'ul.list-pagerer');
-//   // clone pager to new pages
-//   var $cPager = $('div[id*="' + options.pagerName + '"]:last ul.list-pagerer')
-//     .clone();
-//   var $sPager = $('div[id*="' + searchOptions.pagerName + '"]:last ' +
-//     'ul.list-pagerer').clone();
-//   var $adPager = $('div[id*="' + searchOptions.pagerName + '"]:last ' +
-//     'ul.list-pagerer').clone();
-//   $('#' + options.pagerName + cid).find('.child.item').append($cPager);
-//   $('#' + searchOptions.pagerName + cid).find('.child.item').append($sPager);
-//   $('#' + addGoalOptions.pagerName + cid).find('.child.item').append($adPager);
-
-//   $.mobile.loading('hide');
-
-//   _messagePopup('New Child has been created.', false);
-//   $.mobile.changePage('#children-' + cid, {
-//     transition: "slide",
-//     reverse: true
-//   });
-// }
-
 function _addNewGoalSuccessCB(tx, results, data) {
+  _messagePopup('Reminder start_date: ' + data.start_date, false);
+  _messagePopup('Reminder end_date: ' + data.end_date, false);
+  if (data.start_date != undefined) {
+    if (window.plugin != undefined) {
+      window.plugin.notification.local.add({
+        id: data.gid, // is converted to a string
+        title: data.first_name,
+        message: data.title,
+        repeat: data.goalInterval, // Has the options of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
+        date: data.start_date
+      });
+    }
+  }
+
   var $addGoalPage = $('#add-goal-' + data.cid),
-    $childPage = $('#children-' + data.cid),
-    goalItem = _getHtml('goalItemChecked', data),
-    myGoalItem = _getHtml('myGoalItem', data);
+      $childPage = $('#children-' + data.cid),
+      goalItem = _getHtml('goalItemChecked', data),
+      myGoalItem = _getHtml('myGoalItem', data);
   // reset send form elements
   $addGoalPage.find('form').trigger('reset')
     .find('div.input-goal').stop(true, true).slideUp(300);
@@ -2431,7 +2407,6 @@ function _getStarted() {
   'image_path': $('#create-profile-photo-img').attr('src')
 },*/
   if (apApp.settings.createNewChild) {
-
     var child = {
       'first_name': $('#create-child-first-name').val(),
       'last_name': $('#create-child-last-name').val(),
@@ -2459,11 +2434,11 @@ function _getStarted() {
             function(tx, results) {
               _dbSuccessHandler(tx);
             }, function(err) {
-              _errorHandler(err, 2154)
+              _errorHandler(err, 2154);
             });
         });
     }, function(err) {
-      _errorHandler(err, 2156)
+      _errorHandler(err, 2156);
       /*});
 }, function(err) {
   _errorHandler(err, 2157)*/
@@ -2483,7 +2458,7 @@ function _uploadContent() {
   var time = apApp.settings.cron;
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('SELECT * FROM users WHERE uid = 1', [], _selectUploadUsers, function(err) {
-      _errorHandler(err, 2167)
+      _errorHandler(err, 2167);
     });
   });
 }
@@ -2510,23 +2485,27 @@ function _selectUploadUsers(tx, results) {
 }
 
 function _uploadUserPictureToSite(user) {
-  var imageURI = user.image_path,
-    options = new FileUploadOptions(),
-    ft = new FileTransfer();
-  options.fileKey = "file";
-  options.fileName = imageURI.substr(imageURI.lastIndexOf('/') + 1);
-  options.mimeType = "image/jpg";
-  ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/user/picture?user_ID=' + apApp.settings.userProfile.uid_origin + '&user-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+  if (apApp.settings.mode != 'dev') {
+    var imageURI = user.image_path,
+      options = new FileUploadOptions(),
+      ft = new FileTransfer();
+    options.fileKey = "file";
+    options.fileName = imageURI.substr(imageURI.lastIndexOf('/') + 1);
+    options.mimeType = "image/jpg";
+    ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/user/picture?user_ID=' + apApp.settings.userProfile.uid_origin + '&user-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+  }
 }
 
 function _uploadChildPictureToSite(child) {
-  var imageURI = child.image_path,
-    options = new FileUploadOptions(),
-    ft = new FileTransfer();
-  options.fileKey = "file";
-  options.fileName = imageURI.substr(imageURI.lastIndexOf('/') + 1);
-  options.mimeType = "image/jpg";
-  ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/child/picture?child_ID=' + child.cid_origin + '&child-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+  if (apApp.settings.mode != 'dev') {
+    var imageURI = child.image_path,
+      options = new FileUploadOptions(),
+      ft = new FileTransfer();
+    options.fileKey = "file";
+    options.fileName = imageURI.substr(imageURI.lastIndexOf('/') + 1);
+    options.mimeType = "image/jpg";
+    ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/child/picture?child_ID=' + child.cid_origin + '&child-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+  }
 }
 
 function _uploadPhotoSuccessCallback(r) {
@@ -2595,7 +2574,7 @@ function _uploadUserChilds(user) {
       'LEFT JOIN relationships AS r ON r.rid = ci.relationship ' +
       'LEFT JOIN users AS ur ON ci.uid = ur.uid ' +
       'WHERE c.updated > ? AND c.uid = ?', [time, user.uid], _selectUploadChilds, function(err) {
-        _errorHandler(err, 2278)
+        _errorHandler(err, 2278);
       });
   });
 }
@@ -2713,7 +2692,7 @@ function _uploadUserGoals(user) {
       'LEFT JOIN age AS a ON a.entity_id = g.gid ' +
       'LEFT JOIN topic AS t ON t.entity_id = g.gid ' +
       'WHERE a.type="goal" AND t.type="goal" AND g.updated > ? AND g.uid = ?', [time, user.uid], _selectUploadGoals, function(err) {
-        _errorHandler(err, 2394)
+        _errorHandler(err, 2394);
       });
   });
 }
@@ -2812,7 +2791,7 @@ function _uploadGoalsofChildren() {
       'LEFT JOIN childs AS c ON c.cid = gi.cid ' +
       'LEFT JOIN users AS u ON u.uid = gi.uid ' +
       'WHERE gi.updated > ?', [time], _selectUploadGoalsofChildren, function(err) {
-        _errorHandler(err, 2488)
+        _errorHandler(err, 2488);
       });
   });
 }
@@ -2982,38 +2961,42 @@ function _getGoalsIds(response, key) {
         _importUsersToApp(response.users, key);
 
       }, function(err) {
-        _errorHandler(err, 2655)
+        _errorHandler(err, 2655);
       });
   });
 
 }
 
 function _downloadUserPhoto(user) {
-  var imagePath = apApp.settings.FullPath + '/' + user.photo; //full file path
-  var url = encodeURI(user.photo_url);
-  var ft = new FileTransfer();
-  ft.download(url, imagePath, function(file) {
-    _messagePopup('Downloading User photo successfully', false);
-    apApp.settings.dbPromiseTracker.transaction(function(tx) {
-      tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [file.fullPath, user.uid_origin]);
+  if (apApp.settings.mode != 'dev') {
+    var imagePath = apApp.settings.FullPath + '/' + user.photo; //full file path
+    var url = encodeURI(user.photo_url);
+    var ft = new FileTransfer();
+    ft.download(url, imagePath, function(file) {
+      _messagePopup('Downloading User photo successfully', false);
+      apApp.settings.dbPromiseTracker.transaction(function(tx) {
+        tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [file.fullPath, user.uid_origin]);
+      });
+    }, function(error) {
+      _messagePopup('There was an error downloading image', true);
     });
-  }, function(error) {
-    _messagePopup('There was an error downloading image', true);
-  });
+  }
 }
 
 function _downloadChildPhoto(child) {
-  var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
-  var url = encodeURI(child.photo_url);
-  var ft = new FileTransfer();
-  ft.download(url, imagePath, function(file) {
-    _messagePopup('Downloading Child photo successfully', false);
-    apApp.settings.dbPromiseTracker.transaction(function(tx) {
-      tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [file.fullPath, child.cid_origin]);
+  if (apApp.settings.mode != 'dev') {
+    var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
+    var url = encodeURI(child.photo_url);
+    var ft = new FileTransfer();
+    ft.download(url, imagePath, function(file) {
+      _messagePopup('Downloading Child photo successfully', false);
+      apApp.settings.dbPromiseTracker.transaction(function(tx) {
+        tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [file.fullPath, child.cid_origin]);
+      });
+    }, function(error) {
+      _messagePopup('There was an error downloading image', true);
     });
-  }, function(error) {
-    _messagePopup('There was an error downloading image', true);
-  });
+  }
 }
 
 function onFileSystemSuccess(fileSystem) {
@@ -3035,7 +3018,6 @@ function _importUsersToApp(users, key) {
         'VALUES (?, ?, ?, ?, ?, ?, 1)', [user.uid_origin, user.name, user.address, user.email, ts, ts],
         function(tx, results) {
           // set user profile UID
-
           var uid = results.insertId;
           userInvite[uid_origin] = uid;
           if (user.photo != undefined) _downloadUserPhoto(user);
@@ -3058,7 +3040,7 @@ function _importUsersToApp(users, key) {
                         tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
                           'VALUES (?, ?, ?)', [cid, userInvite[relationship.uid], relationship.relationship],
                           function(tx, results) {}, function(err) {
-                            _errorHandler(err, 2730)
+                            _errorHandler(err, 2730);
                           });
                       }
                     });
@@ -3071,13 +3053,13 @@ function _importUsersToApp(users, key) {
                         tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
                           'VALUES (?, ?, ?, ?, ?)', [apApp.settings.goalsInvite[goal.gid_origin], cid, userInvite[goal.uid_origin], goal.completed, child.updated],
                           function(tx, results) {}, function(err) {
-                            _errorHandler(err, 2741)
+                            _errorHandler(err, 2741);
                           });
                       }
                     });
                   }
                 }, function(err) {
-                  _errorHandler(err, 2745)
+                  _errorHandler(err, 2745);
                 });
             });
           }
@@ -3124,10 +3106,10 @@ function _createUserProfile() {
         _messagePopup('Profile was created');
         _firstUploadUser(profile);
       }, function(err) {
-        _errorHandler(err, 2914)
+        _errorHandler(err, 2914);
       });
   }, function(err) {
-    _errorHandler(err, 2917)
+    _errorHandler(err, 2917);
   });
 }
 
@@ -3232,7 +3214,7 @@ function _registrationSecondStep() {
           _changePageSecondStep();
         }
       }, function(err) {
-        _errorHandler(err, 3035)
+        _errorHandler(err, 3035);
       });
   });
 }
