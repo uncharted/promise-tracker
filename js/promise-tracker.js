@@ -1200,7 +1200,6 @@ function _updateChild(child,users,goals) {
     tx.executeSql('UPDATE childs SET first_name = ?, last_name = ?, birth_date = ?, age = ?, ' + 
     'updated = ?, created = ?, status = ? WHERE cid = ? ' , [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status, child.cid],
     function(tx, results) {
-      _messagePopup('Update child ' + child.first_name );
       tx.executeSql('DELETE FROM child_index WHERE cid = ?', [child.cid],
       function(tx, results) {
         if (child.child_index != undefined) {
