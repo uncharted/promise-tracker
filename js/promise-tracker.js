@@ -951,12 +951,8 @@ function _selectCronVariableCB(tx, results) {
     apApp.settings.cron = 0;
   }
   var time = apApp.settings.timestamp - apApp.settings.cron;
-  if (time > apApp.settings.cron_safe_threshold) {
-    if (apApp.settings.mode == 'dev') {
-      _getContent();
-    } else {
-      _uploadContent();
-    }
+  if (time > apApp.settings.cron_safe_threshold || apApp.settings.registation) {
+    _uploadContent();
   } else {
     if (apApp.settings.mode != 'dev') {
       _getInvitation();
@@ -1131,11 +1127,11 @@ function _addChilds(childs,key){
       }, function(err) {
         _errorHandler(err, 2655)
       });
-      
+
     } else {
       _addChildsProcess(tx,childs,key);
     }
-    
+
   });
 
 }
@@ -1192,12 +1188,12 @@ function _insertChild(child,users,goals){
       _errorHandler(err, 1034)
     });
   });
-  
+
 }
 
 function _updateChild(child,users,goals) {
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
-    tx.executeSql('UPDATE childs SET first_name = ?, last_name = ?, birth_date = ?, age = ?, ' + 
+    tx.executeSql('UPDATE childs SET first_name = ?, last_name = ?, birth_date = ?, age = ?, ' +
     'updated = ?, created = ?, status = ? WHERE cid = ? ' , [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status, child.cid],
     function(tx, results) {
       tx.executeSql('DELETE FROM child_index WHERE cid = ?', [child.cid],
@@ -3285,7 +3281,7 @@ function _insertRelationship(data) {
     tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
       'VALUES (?, ?, ?)', [data.cid, data.uid, data.relationship],
       function(tx, results) {
-      	
+
       },
       function(err) {
         _errorHandler(err, 3253)
@@ -3298,7 +3294,7 @@ function _updateChildTime(data) {
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('UPDATE childs SET updated = ? WHERE cid = ?' , [ts, data.cid],
     function(tx, results) {
-      	
+
       },
       function(err) {
         _errorHandler(err, 3265)
