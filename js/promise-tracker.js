@@ -601,41 +601,22 @@ function events() {
       }
     })
     .on('click', 'li.checked-goal-plus', function(e) {
-      $.mobile.loading('show');
       var $goal = $(this);
-      var data = {};
-      data.cid = $goal.data('cid');
-      data.gid = $goal.data('gid');
-      data.image_path = $goal.parents('.main').find('.child.item img').attr('src');
-      data.title = $goal.find('a').text();
-      data.completed = 0;
-      // Update child
-      apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        var timestp = parseInt(new Date().getTime() / 1000); // timestamp
-        tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
-          'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
-          function(tx, results) {
-            var goalItemChecked = _getHtml('goalItemChecked', data),
-              myGoalItem = _getHtml('myGoalItem', data);
-            $('#children-' + data.cid)
-              .find('.main .check-listview')
-              .append(goalItemChecked);
-            $('#children-' + data.cid)
-              .find('.main .check-listview.ui-listview')
-              .listview('refresh');
-            $('#my-goals li:first').after(myGoalItem);
-            if ($('#settings.ui-page').get(0)) {
-              $('#my-goals').listview('refresh');
-            }
-            $.mobile.loading('hide');
-            $goal.slideUp(300);
-            _messagePopup('Goal "' + data.title + '" has been added', false);
-          },
-          function(err) {
-            _errorHandler(err, 751);
-          });
-      }, function(err) {
-        _errorHandler(err, 752);
+      var data = {
+        'cid': $goal.data('cid'),
+        'gid': $goal.data('gid'),
+        'status': 1,
+        'title': $goal.find('a').text(),
+        'age': parseInt($goal.parents('.main').find('.child.item').data('age')),
+        'first_name': $goal.parents('.main').find('.child.item span.title').text(),
+        'image_path': $goal.parents('.main').find('.child.item img').attr('src'),
+        'completed': 0
+      };
+      $('#submit-goal-settings').removeClass('is-new-goal');
+      $(window).data(data);
+      $.mobile.changePage('#goal-settings', {
+        allowSamePageTransition: true,
+        transition: 'slide'
       });
       e.preventDefault();
     })
@@ -649,6 +630,7 @@ function events() {
           },
           globalCid = $(window).data('cid'),
           topicName = $('option:checked', this).text();
+        $(window).data('topic', topicID);
         if (!$('div[id*="' + options.pagerName + topicID + '-cid-"]').get(0)) {
           apApp.settings.dbPromiseTracker.transaction(function(tx) {
             tx.executeSql('SELECT c.image_path, c.cid, c.first_name, c.age, ' +
@@ -740,76 +722,167 @@ function events() {
       // } else {
       $.mobile.loading('show');
       var data = $(window).data();
-      // insert new goal
-      apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        var timestp = parseInt(new Date().getTime() / 1000); // timestamp
-        tx.executeSql('INSERT INTO goals (gid_origin, uid_origin, uid, title, featured, updated, created, status) ' +
-          'VALUES (0, 0, ?, ?, 0, ?, ?, ?)', [apApp.settings.profileUID, data.title, timestp, timestp, data.status],
-          function(tx, results) {
-            data.gid = results.insertId;
-            tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
-              'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
-              function(tx, results) {
-                tx.executeSql('INSERT INTO age (entity_id, type, age, delta) ' +
-                  'VALUES (?, "goal", ?, 0)', [data.gid, data.age],
-                  function(tx, results) {
-                    tx.executeSql('INSERT INTO topic (entity_id, type, topic, delta) ' +
-                      'VALUES (?, "goal", ?, 0)', [data.gid, data.topic],
-                      function(tx, results) {
-                        data.goalRepeat = $('#goal-repeat').val();
-                        data.goalTime = $('#goal-time').val();
-                        data.goalInterval = $('#goal-interval').val();
-                        data.start_date = new Date();
-                        data.end_date = new Date();
+      if ($(this).hasClass('is-new-goal')) {
+        // insert new goal
+        apApp.settings.dbPromiseTracker.transaction(function(tx) {
+          var timestp = parseInt(new Date().getTime() / 1000); // timestamp
+          tx.executeSql('INSERT INTO goals (gid_origin, uid_origin, uid, title, featured, updated, created, status) ' +
+            'VALUES (0, 0, ?, ?, 0, ?, ?, ?)', [apApp.settings.profileUID, data.title, timestp, timestp, data.status],
+            function(tx, results) {
+              data.gid = results.insertId;
+              tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
+                'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
+                function(tx, results) {
+                  tx.executeSql('INSERT INTO age (entity_id, type, age, delta) ' +
+                    'VALUES (?, "goal", ?, 0)', [data.gid, data.age],
+                    function(tx, results) {
+                      tx.executeSql('INSERT INTO topic (entity_id, type, topic, delta) ' +
+                        'VALUES (?, "goal", ?, 0)', [data.gid, data.topic],
+                        function(tx, results) {
+                          data.goalRepeat = $('#goal-repeat').val();
+                          data.goalTime = $('#goal-time').val();
+                          data.goalInterval = $('#goal-interval').val();
+                          data.start_date = new Date();
+                          data.end_date = new Date();
 
-                        var res = data.goalTime.split(':');
-                        data.start_date.setHours(res[0], res[1], 0, 0);
-                        data.end_date.setHours(res[0], res[1], 0, 0);
+                          var res = data.goalTime.split(':');
+                          data.start_date.setHours(res[0], res[1], 0, 0);
+                          data.end_date.setHours(res[0], res[1], 0, 0);
 
-                        var goalInterval = data.goalInterval.split('-');
-                        var days = parseInt(goalInterval[1]);
-                        switch (goalInterval[0]) {
-                          case 'day':
-                            data.end_date.setDate(data.start_date.getDate() + days);
-                            break;
-                          case 'month':
-                            data.end_date.setMonth(data.start_date.getMonth() + days);
-                            break;
-                          case 'year':
-                            data.end_date.setFullYear(data.start_date.getFullYear() + days);
-                            break;
-                        }
-                        var startDate = parseInt(data.start_date.getTime() / 1000),
-                          endDate = parseInt(data.end_date.getTime() / 1000);
-                        tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date) ' +
-                          'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, startDate, endDate],
-                          function(tx, results) {
-                            data.rid = results.insertId;
-                            tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid) ' +
-                              'VALUES (?, ?, ?, ?)', [data.rid, apApp.settings.profileUID, data.cid, data.gid],
-                              function(tx, results) {
-                                _addNewGoalSuccessCB(tx, results, data);
-                              }, function(err) {
-                                _errorHandler(err, 741);
-                              });
-                          }, function(err) {
-                            _errorHandler(err, 745);
+                          var goalInterval = data.goalInterval.split('-');
+                          var days = parseInt(goalInterval[1]);
+                          switch (goalInterval[0]) {
+                            case 'day':
+                              data.end_date.setDate(data.start_date.getDate() + days);
+                              break;
+                            case 'month':
+                              data.end_date.setMonth(data.start_date.getMonth() + days);
+                              break;
+                            case 'year':
+                              data.end_date.setFullYear(data.start_date.getFullYear() + days);
+                              break;
+                          }
+                          var startDate = parseInt(data.start_date.getTime() / 1000),
+                            endDate = parseInt(data.end_date.getTime() / 1000);
+                          tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date) ' +
+                            'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, startDate, endDate],
+                            function(tx, results) {
+                              data.rid = results.insertId;
+                              tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid) ' +
+                                'VALUES (?, ?, ?, ?)', [data.rid, apApp.settings.profileUID, data.cid, data.gid],
+                                function(tx, results) {
+                                  _addNewGoalSuccessCB(tx, results, data);
+                                }, function(err) {
+                                  _errorHandler(err, 741);
+                                });
+                            }, function(err) {
+                              _errorHandler(err, 745);
+                            });
+                        }, function(err) {
+                          _errorHandler(err, 738);
+                        });
+                    }, function(err) {
+                      _errorHandler(err, 730);
+                    });
+                }, function(err) {
+                  _errorHandler(err, 724);
+                });
+            }, function(err) {
+              _errorHandler(err, 741);
+            });
+        }, function(err) {
+          _errorHandler(err, 744);
+        });
+      } else {
+        // Update child
+        apApp.settings.dbPromiseTracker.transaction(function(tx) {
+          var timestp = parseInt(new Date().getTime() / 1000); // timestamp
+          tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
+            'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
+            function(tx, results) {
+              data.goalRepeat = $('#goal-repeat').val();
+              data.goalTime = $('#goal-time').val();
+              data.goalInterval = $('#goal-interval').val();
+              data.start_date = new Date();
+              data.end_date = new Date();
+
+              var res = data.goalTime.split(':');
+              data.start_date.setHours(res[0], res[1], 0, 0);
+              data.end_date.setHours(res[0], res[1], 0, 0);
+
+              var goalInterval = data.goalInterval.split('-');
+              var days = parseInt(goalInterval[1]);
+              switch (goalInterval[0]) {
+                case 'day':
+                  data.end_date.setDate(data.start_date.getDate() + days);
+                  break;
+                case 'month':
+                  data.end_date.setMonth(data.start_date.getMonth() + days);
+                  break;
+                case 'year':
+                  data.end_date.setFullYear(data.start_date.getFullYear() + days);
+                  break;
+              }
+              var startDate = parseInt(data.start_date.getTime() / 1000),
+                endDate = parseInt(data.end_date.getTime() / 1000);
+              tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date) ' +
+                'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, startDate, endDate],
+                function(tx, results) {
+                  data.rid = results.insertId;
+                  tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid) ' +
+                    'VALUES (?, ?, ?, ?)', [data.rid, apApp.settings.profileUID, data.cid, data.gid],
+                    function(tx, results) {
+                      var goalItemChecked = _getHtml('goalItemChecked', data),
+                        myGoalItem = _getHtml('myGoalItem', data)
+                        $childPage = $('#children-' + data.cid);
+                      $('#children-' + data.cid)
+                        .find('.main .check-listview')
+                        .append(goalItemChecked);
+                      $('#children-' + data.cid)
+                        .find('.main .check-listview.ui-listview')
+                        .listview('refresh');
+                      $('#my-goals li:first').after(myGoalItem);
+                      if ($('#settings.ui-page').get(0)) {
+                        $('#my-goals').listview('refresh');
+                      }
+
+                      _messagePopup('Reminder start_date: ' + data.start_date, false);
+                      _messagePopup('Reminder end_date: ' + data.end_date, false);
+                      if (data.start_date != undefined) {
+                        if (window.plugin != undefined) {
+                          window.plugin.notification.local.add({
+                            id: data.gid, // is converted to a string
+                            title: data.first_name,
+                            message: data.title,
+                            repeat: data.goalInterval, // Has the options of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
+                            date: data.start_date
                           });
-                      }, function(err) {
-                        _errorHandler(err, 738);
-                      });
-                  }, function(err) {
-                    _errorHandler(err, 730);
-                  });
-              }, function(err) {
-                _errorHandler(err, 724);
-              });
-          }, function(err) {
-            _errorHandler(err, 741);
-          });
-      }, function(err) {
-        _errorHandler(err, 744);
-      });
+                        }
+                      }
+                      $.mobile.loading('hide');
+                      _messagePopup('Goal "' + data.title + '" has been added', false);
+
+                      // return to prev page
+                      if ($childPage.get(0)) {
+                        $.mobile.changePage('#children-' + data.cid, {
+                          transition: "slide",
+                          reverse: true
+                        });
+                      }
+                    }, function(err) {
+                      _errorHandler(err, 894);
+                    });
+                }, function(err) {
+                  _errorHandler(err, 897);
+                });
+            },
+            function(err) {
+              _errorHandler(err, 901);
+            });
+        }, function(err) {
+          _errorHandler(err, 904);
+        });
+      }
       // }
       e.preventDefault();
     })
@@ -831,6 +904,7 @@ function events() {
           'completed': 0
         };
         $(window).data(data);
+        $('#submit-goal-settings').addClass('is-new-goal');
         $.mobile.changePage('#goal-settings', {
           allowSamePageTransition: true,
           transition: 'slide'
@@ -1110,37 +1184,35 @@ function _addGoals(goals, key) {
   });
 }
 
-function _addChilds(childs,key){
+function _addChilds(childs, key) {
+  var users = [];
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     childs.goalsInvite = [];
     if (childs.goals != undefined) {
       tx.executeSql('SELECT gid, gid_origin FROM goals WHERE gid_origin IN (' + childs.goals.join() + ')', [],
-      function(tx, results) {
-        var len = results.rows.length;
-        if (len) {
-          for (var i = 0; i < len; i++) {
-            var item = results.rows.item(i);
-            childs.goalsInvite[item.gid_origin] = item.gid;
+        function(tx, results) {
+          var len = results.rows.length;
+          if (len) {
+            for (var i = 0; i < len; i++) {
+              var item = results.rows.item(i);
+              childs.goalsInvite[item.gid_origin] = item.gid;
+            }
           }
-        }
-        _addChildsProcess(tx,childs,key);
-      }, function(err) {
-        _errorHandler(err, 2655)
-      });
-
+          _addChildsProcess(tx, childs, key);
+        }, function(err) {
+          _errorHandler(err, 2655)
+        });
     } else {
-      _addChildsProcess(tx,childs,key);
+      _addChildsProcess(tx, childs, key);
     }
-
   });
-
 }
 
-function _addChildsProcess(tx,childs,key){
+function _addChildsProcess(tx, childs, key) {
   var users = [];
-    tx.executeSql('SELECT uid, uid_origin FROM users',[],function(tx, results){
+  tx.executeSql('SELECT uid, uid_origin FROM users', [], function(tx, results) {
     var len = results.rows.length;
-    if (len){
+    if (len) {
       for (var i = 0; i < len; i++) {
         var item = results.rows.item(i);
         users[item.uid_origin] = item.uid;
@@ -1148,78 +1220,76 @@ function _addChildsProcess(tx,childs,key){
       var size = Object.keys(childs.children).length;
       var i = 0;
       $.each(childs.children, function(i, child) {
-        tx.executeSql('SELECT cid FROM childs WHERE cid_origin = ?',[child.cid_origin],function(tx, results){
-            var len = results.rows.length;
-            if (len) {
-              child.cid = results.rows.item(0).cid;
-              _updateChild(child,users,childs.goalsInvite);
-            } else {
-              _insertChild(child,users,childs.goalsInvite);
-            }
-            i++;
-            if ( i == size ) {
-              apApp.settings.queryExclude.childs = true;
-              _queryExclude(key);
-            }
-          });
-       });
+        tx.executeSql('SELECT cid FROM childs WHERE cid_origin = ?', [child.cid_origin], function(tx, results) {
+          var len = results.rows.length;
+          if (len) {
+            child.cid = results.rows.item(0).cid;
+            _updateChild(child, users, childs.goalsInvite);
+          } else {
+            _insertChild(child, users, childs.goalsInvite);
+          }
+          i++;
+          if (i == size) {
+            apApp.settings.queryExclude.childs = true;
+            _queryExclude(key);
+          }
+        });
+      });
     }
-    },function(err){
-      _errorHandler(err, 1018);
-    });
+  }, function(err) {
+    _errorHandler(err, 1018);
+  });
 }
 
-function _insertChild(child,users,goals){
+function _insertChild(child, users, goals) {
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('INSERT INTO childs (cid_origin, uid, first_name, ' +
       'last_name, birth_date, age, updated, created, status) ' +
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.cid_origin, users[child.uid_origin], child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
-    function(tx, results) {
-      _messagePopup('Add new child ' + child.first_name + ' ');
-      child.cid = results.insertId;
-      if (child.photo != undefined) _downloadChildPhoto(child);
-      if (child.child_index != undefined) {
-        _insertChildIndex(tx,child,users);
-      }
-      if (child.goal_index != undefined) {
-        _insertChildGoalIndex(tx,child,users,goals);
-      }
-    }, function(err) {
-      _errorHandler(err, 1034)
-    });
+      function(tx, results) {
+        _messagePopup('Add new child ' + child.first_name + ' ');
+        child.cid = results.insertId;
+        if (child.photo != undefined) _downloadChildPhoto(child);
+        if (child.child_index != undefined) {
+          _insertChildIndex(tx, child, users);
+        }
+        if (child.goal_index != undefined) {
+          _insertChildGoalIndex(tx, child, users, goals);
+        }
+      }, function(err) {
+        _errorHandler(err, 1034)
+      });
   });
-
 }
 
-function _updateChild(child,users,goals) {
+function _updateChild(child, users, goals) {
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('UPDATE childs SET first_name = ?, last_name = ?, birth_date = ?, age = ?, ' +
-    'updated = ?, created = ?, status = ? WHERE cid = ? ' , [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status, child.cid],
-    function(tx, results) {
-      tx.executeSql('DELETE FROM child_index WHERE cid = ?', [child.cid],
+      'updated = ?, created = ?, status = ? WHERE cid = ? ', [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status, child.cid],
       function(tx, results) {
-        if (child.child_index != undefined) {
-          _insertChildIndex(tx,child,users);
-        }
+        tx.executeSql('DELETE FROM child_index WHERE cid = ?', [child.cid],
+          function(tx, results) {
+            if (child.child_index != undefined) {
+              _insertChildIndex(tx, child, users);
+            }
+          }, function(err) {
+            _errorHandler(err, 1140)
+          });
+        tx.executeSql('DELETE FROM goal_index WHERE cid = ?', [child.cid],
+          function(tx, results) {
+            if (child.goal_index != undefined) {
+              _insertChildGoalIndex(tx, child, users, goals);
+            }
+          }, function(err) {
+            _errorHandler(err, 1140)
+          });
       }, function(err) {
-        _errorHandler(err, 1140)
+        _errorHandler(err, 1127)
       });
-      tx.executeSql('DELETE FROM goal_index WHERE cid = ?', [child.cid],
-      function(tx, results) {
-        if (child.goal_index != undefined) {
-          _insertChildGoalIndex(tx,child,users,goals);
-        }
-      }, function(err) {
-        _errorHandler(err, 1140)
-      });
-    }, function(err) {
-      _errorHandler(err, 1127)
-    });
   });
-
 }
 
-function _insertChildIndex(tx,child,users){
+function _insertChildIndex(tx, child, users) {
   //create child_index
   $.each(child.child_index, function(i, relationship) {
     if (users[relationship.uid] != undefined) {
@@ -1232,7 +1302,7 @@ function _insertChildIndex(tx,child,users){
   });
 }
 
-function _insertChildGoalIndex(tx,child,users,goals){
+function _insertChildGoalIndex(tx, child, users, goals) {
   if (child.goal_index != undefined) {
     //create goal_index
     $.each(child.goal_index, function(i, goal) {
@@ -2092,11 +2162,11 @@ function _getHtml(idx, dt, options) {
       break;
     case 'article':
       if (opt.articleLinked !== null) {
-        output += '<article class="child item">';
+        output += '<article class="child item" data-age="' + dt.age + '">';
         output += '<a href="#children-' + dt.cid + '" data-transition="slide" ' +
           'title="' + dt.first_name + '">';
       } else {
-        output += '<article class="child item inner">';
+        output += '<article class="child item inner" data-age="' + dt.age + '">';
       }
       output += '<img src="' + dt.image_path + '" alt="" />';
       output += '<span class="image-horizontal-gradient-overlay"></span>';
@@ -2474,11 +2544,11 @@ function _getStarted() {
     // Create users
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
       /*tx.executeSql('INSERT INTO users (uid_origin, password, name, address, ' +
-  'email, image_path, updated, created, status, update_photo) ' +
-  'VALUES (0, ?, ?, ?, ?, ?, ?, ?, 1, 1)', [profile.password, profile.name, profile.address, profile.email, profile.image_path, ts, ts],
-  function(tx, results) {
-    // set user profile UID
-    apApp.settings.profileUID = results.insertId;*/
+'email, image_path, updated, created, status, update_photo) ' +
+'VALUES (0, ?, ?, ?, ?, ?, ?, ?, 1, 1)', [profile.password, profile.name, profile.address, profile.email, profile.image_path, ts, ts],
+function(tx, results) {
+  // set user profile UID
+  apApp.settings.profileUID = results.insertId;*/
       // Create childs
       tx.executeSql('INSERT INTO childs (cid_origin, uid, first_name, ' +
         'last_name, birth_date, image_path, age, updated, created, status, update_photo) ' +
@@ -3086,7 +3156,7 @@ function _importUsersToApp(users, key) {
                 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.cid_origin, uid, child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
                 function(tx, results) {
                   i++;
-                  if (i == size)_queryExcludeInvite(key);
+                  if (i == size) _queryExcludeInvite(key);
                   _messagePopup('Child ' + child.first_name + ' from ' + user.name + ' was created');
                   var cid = results.insertId;
                   if (child.photo != undefined) _downloadChildPhoto(child);
@@ -3292,8 +3362,8 @@ function _insertRelationship(data) {
 function _updateChildTime(data) {
   var ts = parseInt(new Date().getTime() / 1000); // timestamp
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
-    tx.executeSql('UPDATE childs SET updated = ? WHERE cid = ?' , [ts, data.cid],
-    function(tx, results) {
+    tx.executeSql('UPDATE childs SET updated = ? WHERE cid = ?', [ts, data.cid],
+      function(tx, results) {
 
       },
       function(err) {
