@@ -33,13 +33,13 @@ apApp.settings.goalsInvite = {};
 if (apApp.settings.mode == 'dev') {
   if ("deviceready" in window) {
     document.addEventListener("deviceready", initApp, true);
-    // document.addEventListener("resume", resumeApp, false);
+    document.addEventListener("resume", resumeApp, false);
   } else {
     $(document).on('ready', initApp);
   }
 } else {
   document.addEventListener("deviceready", initApp, false);
-  // document.addEventListener("resume", resumeApp, false);
+  document.addEventListener("resume", resumeApp, false);
 }
 
 // Initialize All functions
