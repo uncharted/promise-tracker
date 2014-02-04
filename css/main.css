@@ -579,7 +579,7 @@ div.copyright img {
   left: 8px;
   right: auto;
   background-position: -66px -67px;
-  z-index: 1;
+  z-index: 2;
 }
 .main .ui-listview.check-listview .check.checked .ui-icon {
   background-position: -44px -67px;
@@ -1474,13 +1474,22 @@ body .main .form .right-side div.ui-input-text:after {
   padding: 0.2em 0;
 }
 ul.ui-listview li.checked-goal a {
+  position: relative;
   background: #a0cbea;
+}
+ul.ui-listview li.checked-goal a,
+ul.ui-listview li.checked-goal .ui-icon {
+  -webkit-transition: left 225ms ease-out;
+  -moz-transition: left 225ms ease-out;
+  -o-transition: left 225ms ease-out;
+  transition: left 225ms ease-out;
 }
 .white ul.ui-listview li.checked-goal a {
   background: #fff;
 }
+ul.ui-listview li span.edit,
 ul.ui-listview li span.delete {
-  background: #ca5645 url(../images/icons.png) no-repeat 0 -110px;
+  background: #ca5645;
   background-size: 200px 200px;
   display: block;
   width: 34px;
@@ -1491,22 +1500,37 @@ ul.ui-listview li span.delete {
   text-indent: -9999px;
   text-align: left;
 }
-ul.ui-listview li span.delete + a {
-  position: relative;
+ul.ui-listview li span.edit {
+  display: none;
+}
+ul.ui-listview li span.edit:after,
+ul.ui-listview li span.delete:after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  background: url(../images/icons.png) no-repeat 0 -110px;
+  background-size: 200px 200px;
+}
+ul.ui-listview li span.edit {
+  background: #a0cbea;
+  right: 34px;
+}
+ul.ui-listview li span.edit:after {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  background-position: -176px -67px;
 }
 ul.ui-listview li.prepare-remove a {
-  left: -34px;
-  -webkit-transition: left 225ms ease-out;
-  -moz-transition: left 225ms ease-out;
-  -o-transition: left 225ms ease-out;
-  transition: left 225ms ease-out;
+  left: -34px !important;
 }
 ul.ui-listview li.prepare-remove .ui-icon {
   left: -26px !important;
-  -webkit-transition: left 225ms ease-out;
-  -moz-transition: left 225ms ease-out;
-  -o-transition: left 225ms ease-out;
-  transition: left 225ms ease-out;
 }
 
 /* page */

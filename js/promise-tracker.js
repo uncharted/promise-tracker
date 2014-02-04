@@ -101,7 +101,10 @@ function html() {
     } else if (!image_path) {
       _messagePopup('Image is required.', true);
     } else {
-      _createUserProfile();
+      if ($(this).attr('data-disabled') == 'false') {
+        _createUserProfile();
+        $(this).attr('data-disabled','true');
+      }
     }
     e.preventDefault();
   });
@@ -153,7 +156,10 @@ function html() {
   });
   // step 3: Get started
   $('#submit-get-started').on('click', function(e) {
-    _getStarted();
+    if ($(this).attr('data-disabled') == 'false') {
+      $(this).attr('data-disabled','true');
+      _getStarted();
+    }
     e.preventDefault();
   });
   $('#submit-update-child').on('click', function(e) {
@@ -407,70 +413,70 @@ function events() {
         $labelFor.show();
       }
     })
-  // event swipe child image
-  .on('swipeleft swiperight', '[data-role="page"] .child.item.inner',
-    function(e) {
+    // event swipe child image
+    .on('swipeleft swiperight', '[data-role="page"] .child.item.inner',
+      function(e) {
+        switch (e.type) {
+          case 'swipeleft':
+            _swipeChildrenInfo('next'); // swipe events on children page
+            break;
+          case 'swiperight':
+            _swipeChildrenInfo('prev'); // swipe events on children page
+            break;
+        }
+      }
+    )
+    .on('swipeleft swiperight', 'li.checked-goal a', function(e) {
       switch (e.type) {
         case 'swipeleft':
-          _swipeChildrenInfo('next'); // swipe events on children page
+          $(this).parents('ul').find('li.prepare-remove')
+            .removeClass('prepare-remove');
+          $(this).parents('li').addClass('prepare-remove');
           break;
         case 'swiperight':
-          _swipeChildrenInfo('prev'); // swipe events on children page
+          $(this).parents('ul').find('li.prepare-remove')
+            .removeClass('prepare-remove');
           break;
       }
-    }
-  )
-    .on('swipeleft swiperight click', 'li.checked-goal', function(e) {
-      switch (e.type) {
-        case 'swipeleft':
-          $(this).parents('ul').find('li.prepare-remove')
-            .removeClass('prepare-remove');
-          $(this).addClass('prepare-remove');
-          break;
-        case 'swiperight':
-          $(this).parents('ul').find('li.prepare-remove')
-            .removeClass('prepare-remove');
-          break;
-        case 'click':
-          $.mobile.loading('show');
-          var $goal = $(this);
-          var data = {};
-          data.cid = $goal.data('cid');
-          data.gid = $goal.data('gid');
-          if ($goal.hasClass('checked')) {
-            data.completed = 0;
-          } else {
-            data.completed = 1;
-          }
-          apApp.settings.dbPromiseTracker.transaction(function(tx) {
-            var timestp = parseInt(new Date().getTime() / 1000); // timestamp
-            tx.executeSql('UPDATE goal_index SET completed = ?, updated = ? ' +
-              'WHERE uid = ? AND cid = ? AND gid = ?', [data.completed, timestp, apApp.settings.profileUID, data.cid, data.gid],
-              function(tx, results) {
-                if ($goal.hasClass('checked')) {
-                  $('#my-goals li[data-gid="' + data.gid + '"]')
-                    .removeClass('checked');
-                  $('#village-goals li[data-gid="' + data.gid + '"]')
-                    .removeClass('checked');
-                  $goal.removeClass('checked');
-                } else {
-                  $('#my-goals li[data-gid="' + data.gid + '"]')
-                    .addClass('checked');
-                  $('#village-goals li[data-gid="' + data.gid + '"]')
-                    .addClass('checked');
-                  $goal.addClass('checked');
-                }
-                _messagePopup('Goal was updated.', false);
-                $.mobile.loading('hide');
-              }, function(err) {
-                _errorHandler(err, 597);
-              });
+    })
+    .on('click', 'li.checked-goal span.ui-icon', function(e) {
+      $.mobile.loading('show');
+      var $goal = $(this).parents('li.checked-goal');
+      var data = {};
+      data.cid = $goal.data('cid');
+      data.gid = $goal.data('gid');
+      if ($goal.hasClass('checked')) {
+        data.completed = 0;
+      } else {
+        data.completed = 1;
+      }
+      apApp.settings.dbPromiseTracker.transaction(function(tx) {
+        var timestp = parseInt(new Date().getTime() / 1000); // timestamp
+        tx.executeSql('UPDATE goal_index SET completed = ?, updated = ? ' +
+          'WHERE uid = ? AND cid = ? AND gid = ?', [data.completed, timestp, apApp.settings.profileUID, data.cid, data.gid],
+          function(tx, results) {
+            if ($goal.hasClass('checked')) {
+              $('#my-goals li[data-gid="' + data.gid + '"]')
+                .removeClass('checked');
+              $('#village-goals li[data-gid="' + data.gid + '"]')
+                .removeClass('checked');
+              $goal.removeClass('checked');
+            } else {
+              $('#my-goals li[data-gid="' + data.gid + '"]')
+                .addClass('checked');
+              $('#village-goals li[data-gid="' + data.gid + '"]')
+                .addClass('checked');
+              $goal.addClass('checked');
+            }
+            _messagePopup('Goal was updated.', false);
+            $.mobile.loading('hide');
           }, function(err) {
-            _errorHandler(err, 598);
+            _errorHandler(err, 597);
           });
-          e.preventDefault();
-          break;
-      }
+      }, function(err) {
+        _errorHandler(err, 598);
+      });
+      e.preventDefault();
     })
     .on('click', 'div.assign-village-holder a.submit', function(e) {
       var $holder = $(this).parents('div.assign-village-holder');
@@ -600,7 +606,21 @@ function events() {
         });
       }
     })
-    .on('click', 'li.checked-goal-plus', function(e) {
+    .on('click', 'ul.ui-listview li span.edit', function() {
+      var data = {
+        'cid': $(window).data('cid'),
+        'title': $(this).parents('li').find('a').text(),
+        'first_name': $.mobile.activePage.find('.child.item .title').text(),
+        'image_path': $.mobile.activePage.find('.child.item img').attr('src')
+      };
+      $(window).data(data);
+      $('#submit-goal-settings').removeClass('is-new-goal');
+      $.mobile.changePage('#goal-settings', {
+        allowSamePageTransition: true,
+        transition: 'slide'
+      });
+    })
+    .on('click', 'li.checked-goal-plus, .featured-goals .item', function(e) {
       var $goal = $(this);
       var data = {
         'cid': $goal.data('cid'),
@@ -964,7 +984,6 @@ function events() {
   $('#submit-add-new-child').on('click', function(e) {
     var birthDate = $('#add-child-birth-date').val();
     var child = {
-      'cid': 1, // default cid
       'first_name': $('#add-child-first-name').val(),
       'last_name': $('#add-child-last-name').val(),
       'birth_date': birthDate,
@@ -1000,13 +1019,18 @@ function events() {
 }
 
 function _reloadPage() {
-  var windowHref = window.location.origin + window.location.pathname;
-  window.location.href = windowHref;
-  $.mobile.changePage(window.location.href, {
-    allowSamePageTransition: true,
-    transition: 'none',
-    reloadPage: true
-  });
+  $.mobile.loading('show');
+  setTimeout(function() {
+    $.mobile.loading('hide');
+    var windowHref = window.location.origin + window.location.pathname;
+    window.location.href = windowHref;
+    $.mobile.changePage('#home', {
+      transition: 'slide',
+      reverse: true,
+      reloadPage: true,
+      showLoadMsg: false
+    });
+  }, 2000);
   // window.location.reload();
 }
 
@@ -1028,10 +1052,8 @@ function _selectCronVariableCB(tx, results) {
   if (time > apApp.settings.cron_safe_threshold || apApp.settings.registation) {
     _uploadContent();
   } else {
-    if (apApp.settings.mode != 'dev') {
-      _getInvitation();
-      _getYourInvitation();
-    }
+    _getInvitation();
+    _getYourInvitation();
     _queryExclude('_dbQuery');
   }
 }
@@ -1220,18 +1242,23 @@ function _addChildsProcess(tx, childs, key) {
       var size = Object.keys(childs.children).length;
       var i = 0;
       $.each(childs.children, function(i, child) {
-        tx.executeSql('SELECT cid FROM childs WHERE cid_origin = ?', [child.cid_origin], function(tx, results) {
+        tx.executeSql('SELECT cid, updated FROM childs WHERE cid_origin = ?', [child.cid_origin], function(tx, results) {
           var len = results.rows.length;
           if (len) {
             child.cid = results.rows.item(0).cid;
-            _updateChild(child, users, childs.goalsInvite);
+            var updated = results.rows.item(0).updated
+            if (child.updated != updated){
+             _updateChild(child, users, childs.goalsInvite);
+            }
           } else {
             _insertChild(child, users, childs.goalsInvite);
           }
           i++;
           if (i == size) {
-            apApp.settings.queryExclude.childs = true;
-            _queryExclude(key);
+            setTimeout(function(){
+              apApp.settings.queryExclude.childs = true;
+              _queryExclude(key);
+            }, 1000*3);
           }
         });
       });
@@ -1593,7 +1620,7 @@ function _dbQuery(tx) {
     'FROM childs AS c ' +
     'LEFT JOIN age AS a ON a.age = c.age ' +
     'LEFT JOIN goals AS g ON g.gid = a.entity_id ' +
-    'LEFT JOIN child_index AS ci ON ci.cid = c.cid ' +
+    'INNER JOIN child_index AS ci ON ci.cid = c.cid ' +
     'INNER JOIN goal_index AS gi ON gi.gid = g.gid ' +
     'WHERE a.type = "goal" ' +
     'ORDER BY g.title ASC', [], function(tx, results) {
@@ -1613,10 +1640,15 @@ function _dbQuery(tx) {
 
 function _selectShowContentCB(tx, results) {
   var len = results.rows.length;
-  console.dir(results);
   if (len) {
     for (var i = 0; i < len; i++) {
-      console.dirxml(results.rows.item(i));
+      var item = results.rows.item(i);
+      var out = '';
+      for (var p in item) {
+        out += p + ': ' + item[p] + '\n';
+      }
+      _messagePopup(out, false);
+      console.dirxml(item);
     }
   }
 }
@@ -2045,7 +2077,7 @@ function _saveChildSuccessCB(tx, results) {
       tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
         'VALUES (?, ?, ?)', [cid, uid, relationship],
         function(tx, results) {
-          if (reloadPage) {
+          if (reloadPage === true) {
             _reloadPage();
           }
         }, function(err) {
@@ -2354,7 +2386,7 @@ function _getHtml(idx, dt, options) {
         var goals = dt.goals;
         $.each(goals, function(gid, val) {
           if (val.featured === 1) {
-            featuredGoals += '<div class="item"><a href="#" class="ui-btn ' +
+            featuredGoals += '<div class="item" data-gid="' + val.gid + '" data-cid="' + dt.cid + '"><a href="#" class="ui-btn ' +
               'ui-btn-icon-right">' + val.title + '</a></div>';
           }
         });
@@ -2418,6 +2450,7 @@ function _getHtml(idx, dt, options) {
       }
       output += '<li data-gid="' + dt.gid + '" data-cid="' + dt.cid + '" ' +
         'class="check checked-goal' + goalClass + '">' +
+        '<span class="edit">Edit</span>' +
         '<span class="delete">Delete</span>' +
         '<a href="#" data-icon="check" ' +
         'data-transition="slide">' + dt.title + '</a></li>';
@@ -2639,12 +2672,26 @@ function _uploadPhotoSuccessCallback(r) {
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
       tx.executeSql('UPDATE users SET update_photo=? WHERE uid_origin=?', [0, response.uid]);
     });
+    var user = {
+      'uid_origin' : response.uid,
+      'photo_url' : response.photo_url,
+      'photo' : response.photo,
+      'reupload' : 1,
+    };
+    _downloadUserPhoto(user);
     _messagePopup("Successfully uploading User image", false);
   }
   if (response.cid != undefined) {
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
       tx.executeSql('UPDATE childs SET update_photo=? WHERE cid_origin=?', [0, response.cid]);
     });
+    var child = {
+      'cid_origin' : response.cid,
+      'photo_url' : response.photo_url,
+      'photo' : response.photo,
+      'reupload' : 1,
+    };
+    _downloadChildPhoto(child);
     _messagePopup("Successfully uploading Child image", false);
   }
 
@@ -3097,7 +3144,9 @@ function _downloadUserPhoto(user) {
     var url = encodeURI(user.photo_url);
     var ft = new FileTransfer();
     ft.download(url, imagePath, function(file) {
-      _messagePopup('Downloading User photo successfully', false);
+      if (user.reupload != 1) {
+        _messagePopup('Downloading User photo successfully', false);
+      }
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
         tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [file.fullPath, user.uid_origin]);
       });
@@ -3113,7 +3162,9 @@ function _downloadChildPhoto(child) {
     var url = encodeURI(child.photo_url);
     var ft = new FileTransfer();
     ft.download(url, imagePath, function(file) {
-      _messagePopup('Downloading Child photo successfully', false);
+      if (child.reupload != 1) {
+        _messagePopup('Downloading Child photo successfully', false);
+      }
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
         tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [file.fullPath, child.cid_origin]);
       });
@@ -3146,6 +3197,7 @@ function _importUsersToApp(users, key) {
           userInvite[uid_origin] = uid;
           if (user.photo != undefined) _downloadUserPhoto(user);
           _messagePopup('User ' + user.name + ' was created');
+          if (user.children == undefined) _queryExcludeInvite(key);
           if (user.children != undefined) {
             var size = Object.keys(user.children).length;
             var i = 0;
