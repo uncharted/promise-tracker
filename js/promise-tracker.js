@@ -170,13 +170,19 @@ function html() {
       'first_name': $('#edit-child-first-name').val(),
       'last_name': $('#edit-child-last-name').val(),
       'birth_date': $('#edit-child-birth-date').val(),
-      'image_path': $('#edit-child-photo-img').attr('src')
+      'image_path': $('#edit-child-photo-img').attr('src'),
+      'update_photo': 0
     };
+
+    if ($('#edit-child-photo-img').attr('src') != $('#edit-child-photo-img').data('osrc')) {
+      data.update_photo = 1;
+    }
+
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
       tx.executeSql('UPDATE childs ' +
         'SET first_name = ?, last_name = ?, birth_date = ?, image_path = ?, ' +
         'updated = ?, update_photo = ? ' +
-        'WHERE cid = ?', [data.first_name, data.last_name, data.birth_date, data.image_path, data.updated, 1, data.cid],
+        'WHERE cid = ?', [data.first_name, data.last_name, data.birth_date, data.image_path, data.updated, data.update_photo, data.cid],
         function(tx, results) {
           var cid = data.cid,
             reloadPage = false,
@@ -249,6 +255,8 @@ function events() {
             .attr('href', '#search-goals-' + cid);
           $('#add-vilage-goals')
             .attr('href', '#children-' + cid);
+          $('#my-goals li[data-icon="plus"] a')
+            .attr('href', '#children-' + cid);
         }
       }
     })
@@ -269,7 +277,9 @@ function events() {
                   $('#edit-child-first-name').val(item.first_name);
                   $('#edit-child-last-name').val(item.last_name);
                   $('#edit-child-birth-date').val(item.birth_date).change();
-                  $('#edit-child-photo-img').attr('src', item.image_path);
+                  $('#edit-child-photo-img')
+                    .attr('src', item.image_path)
+                    .data('osrc', item.image_path);
                   // assign-village
                   tx.executeSql('SELECT u.uid, ci.relationship ' +
                     'FROM users AS u ' +
@@ -1052,8 +1062,10 @@ function _selectCronVariableCB(tx, results) {
   if (time > apApp.settings.cron_safe_threshold || apApp.settings.registation) {
     _uploadContent();
   } else {
-    _getInvitation();
-    _getYourInvitation();
+    if (apApp.settings.mode != 'dev') {
+      _getInvitation();
+      _getYourInvitation();
+    }
     _queryExclude('_dbQuery');
   }
 }
@@ -1636,6 +1648,14 @@ function _dbQuery(tx) {
     }, function(err) {
       _errorHandler(err, 1121);
     });
+
+  tx.executeSql('SELECT * FROM goals', [], function(tx, results) {
+    if (!results.rows.length) {
+      $('body').addClass('empty-search');
+    }
+  }, function(err) {
+    _errorHandler(err, 1643);
+  });
 }
 
 function _selectShowContentCB(tx, results) {
@@ -1651,6 +1671,10 @@ function _selectShowContentCB(tx, results) {
       console.dirxml(item);
     }
   }
+  else {
+    _messagePopup('Query is empty', false);
+    console.dirxml('Query is empty');
+  }
 }
 
 // Query the users success callback
@@ -1664,7 +1688,9 @@ function _selectUsersSuccessCB(tx, results) {
     $('#profile-address').val(profile.address);
     $('#profile-email').val(profile.email);
     if (profileImagePath) {
-      $('#profile-photo-img').attr('src', profileImagePath);
+      $('#profile-photo-img')
+        .attr('src', profileImagePath)
+        .data('osrc', profileImagePath);
       $('#profile-photo').show();
       $('#profile-upload-photo').hide();
     }
@@ -1683,27 +1709,34 @@ function _selectUsersSuccessCB(tx, results) {
     }
   }
 
-  $('input.profile-input[type="text"]').on('change', function(e) {
+  $('#update-profile-settings').on('click', function(e) {
     var data = {
       'name': $('#profile-name').val(),
       'address': $('#profile-address').val(),
       'email': $('#profile-email').val(),
-      'image_path': profileImagePath
+      'image_path': $('#profile-photo-img').attr('src'),
+      'update_photo': 0
     };
+
+    if ($('#profile-photo-img').attr('src') != $('#profile-photo-img').data('osrc')) {
+      data.update_photo = 1;
+    }
 
     // Create or Update profile
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
       var updatedTimestamp = parseInt(new Date().getTime() / 1000);
       // create user profile
       tx.executeSql('UPDATE users SET name = ?, address = ?, email = ?, ' +
-        'image_path = ?, updated = ? ' +
-        'WHERE uid = ?', [data.name, data.address, data.email, data.image_path, updatedTimestamp, apApp.settings.profileUID],
+        'image_path = ?, updated = ?, update_photo = ? ' +
+        'WHERE uid = ?', [data.name, data.address, data.email, data.image_path, updatedTimestamp, data.update_photo, apApp.settings.profileUID],
         function() {
           _messagePopup('Profile has been updated.', false);
+          _reloadPage();
         });
     }, function(err) {
       _errorHandler(err, 1185);
     });
+    e.preventDefault();
   });
 }
 
@@ -2818,7 +2851,6 @@ function _uploadChildToSite(childs) {
         apApp.settings.uploadQueryExclude.child = true;
         _uploadQueryExclude();
       }
-
     }
   });
 }

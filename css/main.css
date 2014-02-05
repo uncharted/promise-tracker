@@ -866,6 +866,9 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
   margin: 0;
   padding: 0 12px;
 }
+.empty-search li.search-holder {
+  display: none !important;
+}
 .main .listview-filter .ui-listview-filter .ui-input-search input {
   color: #ca5645;
   font-size: 17px;
