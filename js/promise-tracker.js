@@ -1627,8 +1627,8 @@ function _dbQuery(tx) {
     });
 
   // village-goals
-  tx.executeSql('SELECT DISTINCT(g.gid), c.image_path, c.cid, ' +
-    'c.first_name, c.age, gi.completed, g.title, gi.cid as gcid, a.delta ' +
+  tx.executeSql('SELECT DISTINCT(gi.cid) as gcid, c.image_path, c.cid, ' +
+    'c.first_name, c.age, gi.completed, g.title, g.gid, a.delta ' +
     'FROM childs AS c ' +
     'LEFT JOIN age AS a ON a.age = c.age ' +
     'LEFT JOIN goals AS g ON g.gid = a.entity_id ' +
