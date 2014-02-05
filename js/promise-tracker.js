@@ -11,7 +11,7 @@ if (apApp.settings.mode == 'dev') {
 }
 apApp.settings.cron = '';
 // apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
-apApp.settings.cron_safe_threshold = 2 * 60; // 2 minute;
+apApp.settings.cron_safe_threshold = 1 * 60; // 2 minute;
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
 apApp.settings.dbPromiseTracker;
 apApp.settings.timestamp = parseInt(new Date().getTime() / 1000);
