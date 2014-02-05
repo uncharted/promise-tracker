@@ -1647,26 +1647,26 @@ function _dbQuery(tx) {
       }
 
 
-      var len = results.rows.length;
-      if (len) {
-        for (var i = 0; i < len; i++) {
-          var item = results.rows.item(i);
-          var out = '';
-          for (var p in item) {
-            if (p != 'image_path') {
-              if (p != 'title') {
-                out += p + ': ' + item[p] + '\n';
-              }
-            }
-          }
-          _messagePopup(out, false);
-          console.dirxml(item);
-        }
-      }
-      else {
-        _messagePopup('Query is empty', false);
-        console.dirxml('Query is empty');
-      }
+      // var len = results.rows.length;
+      // if (len) {
+      //   for (var i = 0; i < len; i++) {
+      //     var item = results.rows.item(i);
+      //     var out = '';
+      //     for (var p in item) {
+      //       if (p != 'image_path') {
+      //         if (p != 'title') {
+      //           out += p + ': ' + item[p] + '\n';
+      //         }
+      //       }
+      //     }
+      //     _messagePopup(out, false);
+      //     console.dirxml(item);
+      //   }
+      // }
+      // else {
+      //   _messagePopup('Query is empty', false);
+      //   console.dirxml('Query is empty');
+      // }
 
 
     }, function(err) {
