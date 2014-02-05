@@ -1645,6 +1645,25 @@ function _dbQuery(tx) {
         }
         $('#village-goals li:first').after(goals);
       }
+
+
+      var len = results.rows.length;
+      if (len) {
+        for (var i = 0; i < len; i++) {
+          var item = results.rows.item(i);
+          var out = '';
+          for (var p in item) {
+            out += p + ': ' + item[p] + '\n';
+          }
+          _messagePopup(out, false);
+          console.dirxml(item);
+        }
+      }
+      else {
+        _messagePopup('Query is empty', false);
+        console.dirxml('Query is empty');
+      }
+
     }, function(err) {
       _errorHandler(err, 1121);
     });
