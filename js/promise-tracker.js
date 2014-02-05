@@ -1627,13 +1627,13 @@ function _dbQuery(tx) {
     });
 
   // village-goals
-  tx.executeSql('SELECT DISTINCT(gi.cid) as gcid, c.image_path, c.cid, ' +
-    'c.first_name, c.age, gi.completed, g.title, g.gid, a.delta ' +
+  tx.executeSql('SELECT DISTINCT(g.gid), c.image_path, c.cid, ' +
+    'c.first_name, c.age, gi.completed, g.title, gi.cid as gcid, a.delta ' +
     'FROM childs AS c ' +
     'LEFT JOIN age AS a ON a.age = c.age ' +
     'LEFT JOIN goals AS g ON g.gid = a.entity_id ' +
-    'INNER JOIN child_index AS ci ON ci.cid = c.cid ' +
-    'INNER JOIN goal_index AS gi ON gi.gid = g.gid ' +
+    'LEFT JOIN child_index AS ci ON ci.cid = c.cid ' +
+    'LEFT JOIN goal_index AS gi ON gi.gid = g.gid ' +
     'WHERE a.type = "goal" ' +
     'ORDER BY g.title ASC', [], function(tx, results) {
       var len = results.rows.length,
@@ -1653,7 +1653,11 @@ function _dbQuery(tx) {
           var item = results.rows.item(i);
           var out = '';
           for (var p in item) {
-            out += p + ': ' + item[p] + '\n';
+            if (p != 'image_path') {
+              if (p != 'title') {
+                out += p + ': ' + item[p] + '\n';
+              }
+            }
           }
           _messagePopup(out, false);
           console.dirxml(item);
@@ -1663,6 +1667,7 @@ function _dbQuery(tx) {
         _messagePopup('Query is empty', false);
         console.dirxml('Query is empty');
       }
+
 
     }, function(err) {
       _errorHandler(err, 1121);
