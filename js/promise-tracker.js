@@ -1357,6 +1357,9 @@ function _addUsers(users, key){
          }
          if (update_users.length) {
            _updateUsers(tx,update_users,key);
+         } else {
+           apApp.settings.queryExclude.users = true;
+           _queryExclude(key);
          }
       } else{
         apApp.settings.queryExclude.users = true;
