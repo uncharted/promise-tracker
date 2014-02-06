@@ -1710,10 +1710,6 @@ function _dbQuery(tx) {
       _errorHandler(err, 1121);
     });
 
-    }, function(err) {
-      _errorHandler(err, 1121);
-    });
-
   tx.executeSql('SELECT * FROM goals', [], function(tx, results) {
     if (!results.rows.length) {
       $('body').addClass('empty-search');
