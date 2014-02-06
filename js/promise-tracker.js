@@ -8,8 +8,8 @@ if (apApp.settings.mode == 'dev') {
   apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
   apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
 } else {
-  apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
-  // apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
+  // apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
+  apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
   apApp.settings.cron_safe_threshold = 1 * 60; // 2 minute;
 }
 apApp.settings.cron = '';
@@ -1349,7 +1349,7 @@ function _addUsers(users, key){
           if (users[item.uid_origin].name != item.name) {
             update_users.push(users[item.uid_origin]);
             continue;
-          } 
+          }
           if (users[item.uid_origin].photo != undefined) {
            var photo = apApp.settings.FullPath + '/' + users[item.uid_origin].photo;
            if (photo != item.image_path) update_users.push(users[item.uid_origin]);
