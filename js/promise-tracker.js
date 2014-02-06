@@ -6,12 +6,13 @@ var apApp = apApp || {
 apApp.settings.mode = 'prod';
 if (apApp.settings.mode == 'dev') {
   apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
+  apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
 } else {
-  apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
+  apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
+  // apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
+  apApp.settings.cron_safe_threshold = 1 * 60; // 2 minute;
 }
 apApp.settings.cron = '';
-// apApp.settings.cron_safe_threshold = 12 * 60 * 60; // 12 hours;
-apApp.settings.cron_safe_threshold = 1 * 60; // 2 minute;
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
 apApp.settings.dbPromiseTracker;
 apApp.settings.timestamp = parseInt(new Date().getTime() / 1000);
@@ -1306,6 +1307,10 @@ function _updateChild(child, users, goals) {
     tx.executeSql('UPDATE childs SET first_name = ?, last_name = ?, birth_date = ?, age = ?, ' +
       'updated = ?, created = ?, status = ? WHERE cid = ? ', [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status, child.cid],
       function(tx, results) {
+        if (child.photo != undefined) {
+          var photo = apApp.settings.FullPath + '/' + child.photo;
+          if (photo != child.image_path) _downloadChildPhoto(child);
+        }
         tx.executeSql('DELETE FROM child_index WHERE cid = ?', [child.cid],
           function(tx, results) {
             if (child.child_index != undefined) {
@@ -1325,6 +1330,59 @@ function _updateChild(child, users, goals) {
       }, function(err) {
         _errorHandler(err, 1127)
       });
+  });
+}
+
+function _addUsers(users, key){
+  var uids = [];
+  $.each(users,function(uid,user){
+    uids.push(uid);
+  });
+  var update_users = [];
+  apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    tx.executeSql('SELECT * FROM users WHERE  uid_origin IN (' + uids.join() + ')', [], function(tx, results) {
+      var len = results.rows.length;
+      if (len) {
+        for (var i = 0; i < len; i++) {
+          var item = results.rows.item(i);
+          users[item.uid_origin].image_path = item.image_path;
+          if (users[item.uid_origin].name != item.name) {
+            update_users.push(users[item.uid_origin]);
+            continue;
+          } 
+          if (users[item.uid_origin].photo != undefined) {
+           var photo = apApp.settings.FullPath + '/' + users[item.uid_origin].photo;
+           if (photo != item.image_path) update_users.push(users[item.uid_origin]);
+          }
+         }
+         if (update_users.length) {
+           _updateUsers(tx,update_users,key);
+         }
+      } else{
+        apApp.settings.queryExclude.users = true;
+        _queryExclude(key);
+      }
+
+     }, function(err) {
+      _errorHandler(err, 1127);
+    });
+  });
+}
+
+function _updateUsers(tx,users,key){
+  var size = Object.keys(users).length;
+  var i = 0;
+  $.each(users, function(i, user) {
+    tx.executeSql('UPDATE users SET name = ? WHERE uid_origin = ?', [user.name, user.uid_origin]);
+    if (user.photo != undefined) {
+     var photo = apApp.settings.FullPath + '/' + user.photo;
+     if (photo != user.image_path) _downloadUserPhoto(user);
+    }
+    i++;
+    if (i == size) {
+       apApp.settings.queryExclude.users = true;
+       _queryExclude(key);
+    }
   });
 }
 
@@ -1424,10 +1482,12 @@ function _getContent(key) {
         apApp.settings.queryExclude.childs = false;
         _addChilds(response.childs, key);
       }
-      if (apApp.settings.mode != 'dev') {
-        _getInvitation();
-        _getYourInvitation();
+      if (response.users != undefined) {
+        apApp.settings.queryExclude.users = false;
+        _addUsers(response.users, key);
       }
+      _getInvitation();
+      _getYourInvitation();
       _queryExclude(key);
     });
 
@@ -1627,17 +1687,15 @@ function _dbQuery(tx) {
     });
 
   // village-goals
-  tx.executeSql('SELECT DISTINCT(gi.gid), c.image_path, c.cid, ' +
-    'c.first_name, c.age, gi.completed, g.title, gi.cid as gcid, a.delta ' +
-    'FROM childs AS c ' +
-    'LEFT JOIN age AS a ON a.age = c.age ' +
-    'LEFT JOIN goals AS g ON g.gid = a.entity_id ' +
-    'INNER JOIN child_index AS ci ON ci.cid = c.cid ' +
+  tx.executeSql('SELECT DISTINCT(g.gid), c.image_path, c.cid as gcid, c.first_name, c.age, g.title, a.delta, gi.completed ' +
+    'FROM goals AS g ' +
     'INNER JOIN goal_index AS gi ON gi.gid = g.gid ' +
+    'INNER JOIN childs AS c ON c.cid = gi.cid ' +
+    'LEFT JOIN age AS a ON a.age = c.age ' +
     'WHERE a.type = "goal" ' +
     'ORDER BY g.title ASC', [], function(tx, results) {
       var len = results.rows.length,
-        goals = '';
+          goals = '';
       if (len) {
         for (var i = 0; i < len; i++) {
           var item = results.rows.item(i);
@@ -1646,27 +1704,26 @@ function _dbQuery(tx) {
         $('#village-goals li:first').after(goals);
       }
 
-
-      // var len = results.rows.length;
-      // if (len) {
-      //   for (var i = 0; i < len; i++) {
-      //     var item = results.rows.item(i);
-      //     var out = '';
-      //     for (var p in item) {
-      //       if (p != 'image_path') {
-      //         if (p != 'title') {
-      //           out += p + ': ' + item[p] + '\n';
-      //         }
-      //       }
-      //     }
-      //     _messagePopup(out, false);
-      //     console.dirxml(item);
-      //   }
-      // }
-      // else {
-      //   _messagePopup('Query is empty', false);
-      //   console.dirxml('Query is empty');
-      // }
+      var len = results.rows.length;
+      if (len) {
+        for (var i = 0; i < len; i++) {
+          var item = results.rows.item(i);
+          var out = '';
+          for (var p in item) {
+            if (p != 'image_path') {
+              if (p != 'title') {
+                out += p + ': ' + item[p] + '\n';
+              }
+            }
+          }
+          _messagePopup(out, false);
+          console.dirxml(item);
+        }
+      }
+      else {
+        _messagePopup('Village goals is empty', false);
+        console.dirxml('Village goals is empty');
+      }
 
 
     }, function(err) {
@@ -2614,13 +2671,6 @@ function _getAge(birthDate) {
 
 function _getStarted() {
   $.mobile.loading('show');
-  /*var profile = {
-'name': $('#create-profile-name').val(),
-'password': $('#create-profile-password').val(),
-'address': $('#create-profile-address').val(),
-'email': $('#create-profile-email').val(),
-'image_path': $('#create-profile-photo-img').attr('src')
-},*/
   if (apApp.settings.createNewChild) {
     var child = {
       'first_name': $('#create-child-first-name').val(),
@@ -2629,16 +2679,10 @@ function _getStarted() {
       'image_path': $('#create-child-photo-img').attr('src'),
       'relationship': $('#create-child-relationship').val()
     },
-      ts = parseInt(new Date().getTime() / 1000);
+   ts = apApp.settings.timestamp;
     child.age = _getAge(child.birth_date);
     // Create users
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
-      /*tx.executeSql('INSERT INTO users (uid_origin, password, name, address, ' +
-'email, image_path, updated, created, status, update_photo) ' +
-'VALUES (0, ?, ?, ?, ?, ?, ?, ?, 1, 1)', [profile.password, profile.name, profile.address, profile.email, profile.image_path, ts, ts],
-function(tx, results) {
-  // set user profile UID
-  apApp.settings.profileUID = results.insertId;*/
       // Create childs
       tx.executeSql('INSERT INTO childs (cid_origin, uid, first_name, ' +
         'last_name, birth_date, image_path, age, updated, created, status, update_photo) ' +
@@ -2654,9 +2698,6 @@ function(tx, results) {
         });
     }, function(err) {
       _errorHandler(err, 2156);
-      /*});
-}, function(err) {
-_errorHandler(err, 2157)*/
     });
   } else {
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
@@ -2761,6 +2802,7 @@ function _uploadPhotoFailCallback(error) {
 }
 
 function _uploadUserToSite(user) {
+  _messagePopup('Profile upload to site',false);
   $.ajax({
     type: 'post',
     url: apApp.settings.restUrl + "import/user",
@@ -2795,6 +2837,7 @@ function _succsesUserUpload(user) {
 
 function _uploadUserChilds(user) {
   var time = apApp.settings.cron;
+  if (apApp.settings.registation) time = time - 1;
   apApp.settings.uploadQueryExclude.child = false;
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('SELECT c.*, ci.relationship, ur.uid_origin AS ruid_origin, r.title, u.uid_origin FROM childs AS c ' +
@@ -2818,7 +2861,6 @@ function _selectUploadChilds(tx, results) {
   apApp.settings.uploadQueryExclude.childPictures = 0;
   if (len) {
     for (var i = 0; i < len; i++) {
-      //var child = results.rows.item(i);
       var item = results.rows.item(i),
         cid = item.cid;
       if (children[cid] == undefined) {
@@ -2859,6 +2901,7 @@ function _selectUploadChilds(tx, results) {
 }
 
 function _uploadChildToSite(childs) {
+  _messagePopup('Upload Child to site',false);
   $.ajax({
     type: 'post',
     url: apApp.settings.restUrl + "import/child",
@@ -3323,7 +3366,7 @@ function _createUserProfile() {
     'email': $('#create-profile-email').val(),
     'image_path': $('#create-profile-photo-img').attr('src')
   },
-    ts = parseInt(new Date().getTime() / 1000);
+  ts = apApp.settings.timestamp;;
   // Create user
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('INSERT INTO users (uid_origin, password, name, address, ' +
