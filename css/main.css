@@ -1348,6 +1348,16 @@ body .main .form .right-side div.ui-input-text:after {
 .main .persons-inline.in-the-village li {
   opacity: 1;
 }
+.main #reminder-persons li {
+  opacity: 0.2;
+  -webkit-transition: opacity 225ms ease-out;
+  -moz-transition: opacity 225ms ease-out;
+  -o-transition: opacity 225ms ease-out;
+  transition: opacity 225ms ease-out;
+}
+.main #reminder-persons li.active {
+  opacity: 1;
+}
 .main .form.add-new-child form {
   border: 0;
   padding: 0 10px;
