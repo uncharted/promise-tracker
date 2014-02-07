@@ -99,10 +99,11 @@ function html() {
       _messagePopup('Email is required.', true);
     } else if (!password) {
       _messagePopup('Password is required.', true);
-    } else if (!image_path) {
-      _messagePopup('Image is required.', true);
     } else {
       if ($(this).attr('data-disabled') == 'false') {
+        if (!image_path) {
+          $('#create-profile-photo-img').attr('src', 'images/default-profile.png');
+        }
         _createUserProfile();
         $(this).attr('data-disabled', 'true');
       }
@@ -220,6 +221,7 @@ function html() {
 }
 
 function events() {
+  var childsCycleInit = false;
   if (window.plugin != undefined) {
     window.plugin.notification.local.onadd = function(id, state, json) {
       _messagePopup('Reminder id:' + id + ' has been added successfully.', false);
@@ -745,7 +747,7 @@ function events() {
                   // add pager in child page
                   $(pager).appendTo('div[data-role="page"][id*="' +
                     options.pagerName + topicID + '-"] .child.item');
-                  if ($.fn.cycle) {
+                  if (childsCycleInit === false) {
                     $('div[id*="add-topic-"] div.featured-goals').cycle({
                       fx: 'scrollHorz',
                       slides: '> .item',
@@ -758,6 +760,7 @@ function events() {
                       pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
                       'log': false
                     });
+                    childsCycleInit = true;
                   }
                   $.mobile.loading('hide');
                   $.mobile.changePage('#' + options.pagerName + topicID +
@@ -920,7 +923,7 @@ function events() {
                       function(tx, results) {}, function(err) {
                         _errorHandler(err, 894);
                       });
-                  )};
+                  });
                   var goalItemChecked = _getHtml('goalItemChecked', data),
                     myGoalItem = _getHtml('myGoalItem', data)
                     $childPage = $('#children-' + data.cid);
@@ -1868,7 +1871,8 @@ function _selectUsersSuccessCB(tx, results) {
 
 // Query the childrens success callback
 function _selectChildSuccessCB(tx, results) {
-  if (results.rows.length) {
+  var resultsLen = results.rows.length;
+  if (resultsLen) {
     var children = _reorderChildrenResult(results),
       addGoalPager = '<ul class="list-pagerer large children-pager">',
       pager = '<ul class="list-pagerer large children-pager">',
@@ -1994,14 +1998,12 @@ function _selectChildSuccessCB(tx, results) {
     //       }
     //     }
     //   }, function(err) {_errorHandler(err, 1300)});
-    // add pager in child page
-    $(pager)
-      .appendTo('div[data-role="page"][id*="' + options.pagerName +
-        '"] .child.item');
-    // add pager to Add Goal page
-    $(addGoalPager)
-      .appendTo('div[data-role="page"][id*="' + addGoalOptions.pagerName +
-        '"] .child.item');
+    if (resultsLen > 1) {
+      // add pager in child page
+      $(pager).appendTo('div[data-role="page"][id*="' + options.pagerName + '"] .child.item');
+      // add pager to Add Goal page
+      $(addGoalPager).appendTo('div[data-role="page"][id*="' + addGoalOptions.pagerName + '"] .child.item');
+    }
     // add goals in settings page
     $('#my-goals li:first').after(myGoals);
   }
