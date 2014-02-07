@@ -102,7 +102,7 @@ function html() {
     } else {
       if ($(this).attr('data-disabled') == 'false') {
         if (!image_path) {
-          $('#create-profile-photo-img').attr('src', 'images/default-profile.png');
+          $('#create-profile-photo-img').attr('src', '/images/default-profile.png');
         }
         _createUserProfile();
         $(this).attr('data-disabled', 'true');
