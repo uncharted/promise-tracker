@@ -34,13 +34,13 @@ apApp.settings.goalsInvite = {};
 if (apApp.settings.mode == 'dev') {
   if ("deviceready" in window) {
     document.addEventListener("deviceready", initApp, true);
-    document.addEventListener("resume", resumeApp, false);
+    // document.addEventListener("resume", resumeApp, false);
   } else {
     $(document).on('ready', initApp);
   }
 } else {
   document.addEventListener("deviceready", initApp, false);
-  document.addEventListener("resume", resumeApp, false);
+  // document.addEventListener("resume", resumeApp, false);
 }
 
 // Initialize All functions
@@ -50,9 +50,9 @@ function initApp() {
   html();
 }
 
-function resumeApp() {
-  _reloadPage();
-}
+// function resumeApp() {
+//   _reloadPage();
+// }
 
 // Connect database
 function db() {
@@ -101,9 +101,6 @@ function html() {
       _messagePopup('Password is required.', true);
     } else {
       if ($(this).attr('data-disabled') == 'false') {
-        if (!image_path) {
-          $('#create-profile-photo-img').attr('src', '/images/default-profile.png');
-        }
         _createUserProfile();
         $(this).attr('data-disabled', 'true');
       }
@@ -242,8 +239,12 @@ function events() {
       });
     };
   }
+  $('#home .iscroll-wrapper').on('iscroll_onpulldown', _reloadPage);
   // jquery mobile events
   $(document)
+    .on('pageinit', function(e) {
+      $('.iscroll-wrapper', this).on('iscroll_onpulldown', _reloadPage);
+    })
     .on('pagebeforeshow', function(e) { // event pagebeforeshow
       var pageId = $.mobile.activePage.attr('id');
       if (pageId != undefined) {
@@ -261,6 +262,10 @@ function events() {
             .attr('href', '#children-' + cid);
         }
       }
+      setTimeout(function() {
+        var iscrollView = $.mobile.activePage.find('.iscroll-wrapper').data('mobileIscrollview');
+        iscrollView.refresh();
+      }, 1000);
     })
     .on('pagebeforeshow', '#edit-child', function(e) {
       var cid = $(window).data('cid');
@@ -354,7 +359,7 @@ function events() {
                 var item = results.rows.item(i);
                 var inlinePerson = _getHtml('inlinePerson', item);
                 var person = '<span class="rounded"><img src="' +
-                  item.image_path + '" alt="' + item.name + '" /></span>';
+                  item.image_path + '" alt="" /></span>';
                 $reminderPersons.append(inlinePerson);
               }
               $reminderPersons.find('li[data-uid="' + uid + '"]')
@@ -401,6 +406,9 @@ function events() {
       // add active class on children pager
       var $pager = $('ul.list-pagerer.large.children-pager');
       var pageId = $.mobile.activePage.attr('id');
+      if ($.mobile.activePage.find('.list-pagerer li').size() <= 1) {
+        $.mobile.activePage.find('.list-pagerer').hide();
+      }
       $pager.find('li.active').removeClass('active');
       $pager.find('a[href*="' + pageId + '"]').parent().addClass('active');
       if ($.fn.inFieldLabels) {
@@ -1008,12 +1016,7 @@ function events() {
         photolibrary = true;
       }
       if ($(this).hasClass('to-profile')) {
-        if (apApp.settings.mode == 'dev') {
-          _captureProfilePhotoSuccess('images/img/img02.jpg');
-        }
-        else {
-          _captureProfilePhoto(photolibrary);
-        }
+        _captureProfilePhoto(photolibrary);
       } else if ($(this).hasClass('to-child')) {
         if ($(this).hasClass('reg')) {
           var image = $('#create-child-photo-img'),
@@ -1028,12 +1031,7 @@ function events() {
             imageHolder = $('#add-child-photo'),
             uploadLink = $('#add-child-upload-photo');
         }
-        if (apApp.settings.mode == 'dev') {
-          _captureChildPhotoSuccess('images/img/img02.jpg', image, imageHolder, uploadLink);
-        }
-        else {
-          _captureChildPhoto(photolibrary, image, imageHolder, uploadLink);
-        }
+        _captureChildPhoto(photolibrary, image, imageHolder, uploadLink);
       }
       e.preventDefault();
     })
@@ -1323,11 +1321,12 @@ function _addChildsProcess(tx, childs, key) {
       var size = Object.keys(childs.children).length;
       var i = 0;
       $.each(childs.children, function(i, child) {
-        tx.executeSql('SELECT cid, updated FROM childs WHERE cid_origin = ?', [child.cid_origin], function(tx, results) {
+        tx.executeSql('SELECT cid, updated, image_path FROM childs WHERE cid_origin = ?', [child.cid_origin], function(tx, results) {
           var len = results.rows.length;
           if (len) {
             child.cid = results.rows.item(0).cid;
-            var updated = results.rows.item(0).updated
+            var updated = results.rows.item(0).updated;
+            child.image_path = results.rows.item(0).image_path;
             if (child.updated != updated){
              _updateChild(child, users, childs.goalsInvite);
             }
@@ -1364,6 +1363,9 @@ function _insertChild(child, users, goals) {
         if (child.goal_index != undefined) {
           _insertChildGoalIndex(tx, child, users, goals);
         }
+        if (child.reminders != undefined) {
+          _updateReminderGoalIndex(tx, child, users, goals);
+        }
       }, function(err) {
         _errorHandler(err, 1034)
       });
@@ -1378,6 +1380,9 @@ function _updateChild(child, users, goals) {
         if (child.photo != undefined) {
           var photo = apApp.settings.FullPath + '/' + child.photo;
           if (photo != child.image_path) _downloadChildPhoto(child);
+        }
+        if (child.reminders != undefined) {
+          _updateReminderGoalIndex(tx, child, users, goals);
         }
         tx.executeSql('DELETE FROM child_index WHERE cid = ?', [child.cid],
           function(tx, results) {
@@ -1399,6 +1404,67 @@ function _updateChild(child, users, goals) {
         _errorHandler(err, 1127)
       });
   });
+}
+
+function _updateReminderGoalIndex(tx, child, users, goals){
+  var timestamp = parseInt(new Date().getTime() / 1000);
+  $.each(child.reminders,function(i,reminder){
+     tx.executeSql('SELECT rid FROM reminder WHERE rid_origin = ?', [reminder.rid_origin],
+       function(tx, results) {
+        var len = results.rows.length;
+        if (len == 0) {
+          reminder.title = child.first_name;
+          reminder.cid = child.cid;
+          if (goals[reminder.gid_origin] != undefined) reminder.gid = goals[reminder.gid_origin];
+          if (timestamp < reminder.end_date) _insertReminder(tx, reminder, users, goals);
+        }
+      }, function(err) {
+        _errorHandler(err, 1340)
+      });
+  });
+}
+
+function _insertReminder(tx, reminder, users, goals){
+  tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [reminder.rid_origin, reminder.title, reminder.message, reminder.repeat, reminder.time,  reminder.interval, reminder.start_date, reminder.end_date],
+    function(tx, results) {
+      reminder.rid = results.insertId;
+      $.each(reminder.uids,function(i,uid_origin){
+       if (users[uid_origin] != undefined) {
+         tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated) ' +
+           'VALUES (?, ?, ?, ?, ?)', [reminder.rid, users[uid_origin], reminder.cid, reminder.gid, apApp.settings.cron],
+           function(tx, results) {
+             if (users[uid_origin] == 1)  _addNewReminder(reminder);
+           }, function(err) {
+         _errorHandler(err, 1372);
+        });
+       }
+
+      });
+
+    }, function(err) {
+      _errorHandler(err, 1377);
+    });
+
+}
+
+function _addNewReminder(data){
+  var start_date = new Date(data.start_date*1000),
+  end_date = new Date(data.end_date*1000);
+  _messagePopup('Reminder start_date: ' + start_date, false);
+  _messagePopup('Reminder end_date: ' + end_date, false);
+  _messagePopup('Goal "' + data.title + '" has been added', false);
+  if (data.start_date != undefined) {
+    if (window.plugin != undefined) {
+      window.plugin.notification.local.add({
+        id: data.rid, // is converted to a string
+        title: data.title,
+        message: data.message,
+        repeat: data.repeat, // Has the options of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
+        date: data.start_date
+      });
+    }
+  }
 }
 
 function _addUsers(users, key){
@@ -1832,7 +1898,7 @@ function _selectUsersSuccessCB(tx, results) {
       var item = results.rows.item(i);
       var inlinePerson = _getHtml('inlinePerson', item);
       var person = '<span class="rounded"><img src="' +
-        item.image_path + '" alt="' + item.name + '" /></span>';
+        item.image_path + '" alt="" /></span>';
       $('ul.persons-inline.in-the-village').prepend(inlinePerson);
       $('[data-role="panel"] li.village a').append(person);
     }
@@ -1982,22 +2048,6 @@ function _selectChildSuccessCB(tx, results) {
       }, function(err) {
         _errorHandler(err, 1284);
       });
-    // tx.executeSql('SELECT ci.cid, ci.relationship ' +
-    //   'FROM users AS u ' +
-    //   'LEFT JOIN child_index AS ci ON ci.uid = u.uid ' +
-    //   'WHERE ci.cid = ? ' +
-    //   'ORDER BY ci.uid ASC',
-    //   [cid],
-    //   function(tx, results) {
-    //     var len = results.rows.length;
-    //     if (len) {
-    //       for (var i = 0; i < len; i++) {
-    //         var item = results.rows.item(i);
-    //         $('#my-childrens li[data-cid="' + item.cid + '"]')
-    //           .find('select').val(item.relationship).change();
-    //       }
-    //     }
-    //   }, function(err) {_errorHandler(err, 1300)});
     if (resultsLen > 1) {
       // add pager in child page
       $(pager).appendTo('div[data-role="page"][id*="' + options.pagerName + '"] .child.item');
@@ -2006,6 +2056,10 @@ function _selectChildSuccessCB(tx, results) {
     }
     // add goals in settings page
     $('#my-goals li:first').after(myGoals);
+    setTimeout(function() {
+      var iscrollView = $('#home .iscroll-wrapper').data('mobileIscrollview');
+      iscrollView.refresh();
+    }, 1000);
   }
 }
 
@@ -2353,6 +2407,11 @@ function _getHtml(idx, dt, options) {
       output += '<a href="#" class="main-menu-btn ui-btn-right">Menu</a>';
       output += '</header>';
       break;
+    case 'iscroll':
+      output += '<div class="iscroll-pulldown">';
+      output += '<span class="iscroll-pull-icon"></span><span class="iscroll-pull-label"></span>';
+      output += '</div>';
+      break;
     case 'article':
       if (opt.articleLinked !== null) {
         output += '<article class="child item" data-age="' + dt.age + '">';
@@ -2422,7 +2481,8 @@ function _getHtml(idx, dt, options) {
         'id="children-' + dt.cid + '" class="white" ' +
         'data-add-back-btn="true" data-cid="' + dt.cid + '">';
       output += _getHtml('header', dt);
-      output += '<section class="main" data-role="content">';
+      output += '<section class="main" data-role="content" data-iscroll="">';
+      output += _getHtml('iscroll', dt);
       output += _getHtml('article', dt);
       if (apApp.settings.tips[dt.age] != undefined) {
         var topicTidsSize = Object.keys(apApp.settings.topicTids).length,
@@ -2463,7 +2523,8 @@ function _getHtml(idx, dt, options) {
         'id="search-goals-' + dt.cid + '" data-cid="' + dt.cid + '" ' +
         'data-add-back-btn="true">';
       output += _getHtml('header', dt);
-      output += '<section class="main" data-role="content">';
+      output += '<section class="main" data-role="content" data-iscroll="">';
+      output += _getHtml('iscroll', dt);
       output += '<div id="search-listing-' + dt.cid + '">';
       output += _getHtml('article', dt);
       output += '<div class="listview-filter">';
@@ -2491,7 +2552,8 @@ function _getHtml(idx, dt, options) {
         dt.cid + '" data-add-back-btn="true" data-cid="' + dt.cid +
         '">';
       output += _getHtml('header', dt);
-      output += '<section class="main" data-role="content">';
+      output += '<section class="main" data-role="content" data-iscroll="">';
+      output += _getHtml('iscroll', dt);
       output += _getHtml('article', dt);
       output += '<form action="#" method="post" accept-charset="utf-8">';
       output += '<div class="ui-field-contain">';
@@ -2556,7 +2618,8 @@ function _getHtml(idx, dt, options) {
         'id="add-topic-' + dt.topicID + '-cid-' + dt.cid + '" ' +
         'data-add-back-btn="true" data-cid="' + dt.cid + '">';
       output += _getHtml('header', dt);
-      output += '<section class="main" data-role="content">';
+      output += '<section class="main" data-role="content" data-iscroll="">';
+      output += _getHtml('iscroll', dt);
       output += _getHtml('article', dt);
       output += '<h2 id="topic-name" class="page-title">' + dt.topicName +
         '</h2>';
@@ -2625,7 +2688,7 @@ function _getHtml(idx, dt, options) {
         '"><a href="#" ' +
         'data-icon="check" data-transition="slide">' +
         '<span class="rounded small"><img src="' + dt.image_path +
-        '" alt="' + dt.first_name + '" /></span>' + dt.title +
+        '" alt="" /></span>' + dt.title +
         '</a></li>';
       break;
     case 'myGoals':
@@ -2647,7 +2710,7 @@ function _getHtml(idx, dt, options) {
       output += '<li><a class="is-ico" href="#children-' + dt.cid + '" ' +
         'data-transition="slide">' + dt.first_name +
         '<span class="rounded"><img src="' + dt.image_path + '" ' +
-        'alt="' + dt.first_name + '" /></span></a></li>';
+        'alt="" /></span></a></li>';
       break;
     case 'pagerItem':
       if (opt.pagerName !== null) {
@@ -2662,8 +2725,7 @@ function _getHtml(idx, dt, options) {
     case 'inlinePerson':
       output += '<li data-uid="' + dt.uid + '"><a href="#">';
       output += '<span class="rounded medium">';
-      output += '<img src="' + dt.image_path + '" alt="' + dt.name +
-        '" />';
+      output += '<img src="' + dt.image_path + '" alt="" />';
       output += '</span>';
       output += dt.name;
       output += '</a></li>';
@@ -2789,13 +2851,15 @@ function _selectUploadUsers(tx, results) {
 
 function _uploadUserPictureToSite(user) {
   if (apApp.settings.mode != 'dev') {
-    var imageURI = user.image_path,
-      options = new FileUploadOptions(),
-      ft = new FileTransfer();
-    options.fileKey = "file";
-    options.fileName = imageURI.substr(imageURI.lastIndexOf('/') + 1);
-    options.mimeType = "image/jpg";
-    ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/user/picture?user_ID=' + apApp.settings.userProfile.uid_origin + '&user-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+    if (user.image_path) {
+      var imageURI = user.image_path,
+        options = new FileUploadOptions(),
+        ft = new FileTransfer();
+      options.fileKey = "file";
+      options.fileName = imageURI.substr(imageURI.lastIndexOf('/') + 1);
+      options.mimeType = "image/jpg";
+      ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/user/picture?user_ID=' + apApp.settings.userProfile.uid_origin + '&user-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+    }
   }
 }
 
@@ -2843,9 +2907,9 @@ function _uploadPhotoSuccessCallback(r) {
 }
 
 function _uploadPhotoFailCallback(error) {
-  _messagePopup('There was an error uploading image', true);
-  _messagePopup('Error code' + error.code, true);
-  _messagePopup('Error source' + error.source, true);
+  _messagePopup('There was an error uploading image.', true);
+  _messagePopup('Error code: ' + error.code, true);
+  _messagePopup('Error source: ' + error.source, true);
 }
 
 function _uploadUserToSite(user) {
@@ -3127,10 +3191,11 @@ function _selectUploadGoalsofChildren(tx, results) {
         cid_origin: item.cid_origin,
         uid_origin: item.uid_origin,
       };
-
     }
     items.goals = goals;
     _uploadGoalsofChildrenToSite(items);
+  } else {
+    _uploadRemindersofGoals();
   }
 }
 
@@ -3141,7 +3206,82 @@ function _uploadGoalsofChildrenToSite(goals) {
     cache: false,
     data: goals,
     crossDomain: true,
-    success: function(response) {}
+    success: function(response) {
+      _uploadRemindersofGoals();
+    }
+  });
+}
+
+function _uploadRemindersofGoals(){
+  var time = apApp.settings.cron;
+  apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    tx.executeSql('SELECT ri.gid, r.*, g.gid_origin, c.cid_origin, u.uid_origin FROM reminder_index AS ri ' +
+      'LEFT JOIN reminder AS r ON r.rid = ri.rid ' +
+      'LEFT JOIN goals AS g ON g.gid = ri.gid ' +
+      'LEFT JOIN childs AS c ON c.cid = ri.cid ' +
+      'LEFT JOIN users AS u ON u.uid = ri.uid ' +
+      'WHERE ri.updated > ?', [time], _selectUploadRemindersofGoals, function(err) {
+        _errorHandler(err, 3089);
+      });
+  });
+}
+
+function _selectUploadRemindersofGoals(tx, results){
+  var len = results.rows.length;
+  var reminders = {};
+  var import_reminder = [];
+  var items = {
+    'reminders': [],
+    'import_reminder' : [],
+  };
+  if (len) {
+    for (var i = 0; i < len; i++) {
+      var item = results.rows.item(i);
+      if (reminders[item.rid] == undefined) {
+        reminders[item.rid] = {
+          'rid': item.rid,
+          'time': item.time,
+          'gid_origin' : item.gid_origin,
+          'repeat': item.repeat,
+          'interval': item.interval,
+          'rid_origin': item.rid_origin,
+          'start_date': item.start_date,
+          'end_date': item.end_date,
+          'cid_origin': item.cid_origin,
+          'uids': [],
+        };
+        if (item.rid_origin == 0) import_reminder.push(item.rid);
+      }
+
+      reminders[item.rid].uids.push(item.uid_origin);
+    }
+    items.reminders = reminders;
+    items.import_reminder = import_reminder;
+    _uploadRemindersofGoalsToSite(items);
+  }
+}
+
+
+function _uploadRemindersofGoalsToSite(reminders){
+  $.ajax({
+    type: 'post',
+    url: apApp.settings.restUrl + "import/reminder-goals",
+    cache: false,
+    data: reminders,
+    crossDomain: true,
+    success: function(response) {
+      if (reminders.import_reminder.length) {
+        _updateRemindersofApp(reminders.import_reminder,response);
+      }
+    }
+  });
+}
+
+function _updateRemindersofApp(reminder,response){
+  $.each(reminder,function(i,rid){
+    apApp.settings.dbPromiseTracker.transaction(function(tx) {
+      tx.executeSql('UPDATE reminder SET rid_origin = ? WHERE rid = ?', [response[rid],rid]);
+    });
   });
 }
 
@@ -3334,9 +3474,9 @@ function _importUsersToApp(users, key) {
   var ts = parseInt(new Date().getTime() / 1000);
   $.each(users, function(uid_origin, user) {
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
-      tx.executeSql('INSERT INTO users (uid_origin, name, address, ' +
+      tx.executeSql('INSERT INTO users (image_path, uid_origin, name, address, ' +
         'email, updated, created, status) ' +
-        'VALUES (?, ?, ?, ?, ?, ?, 1)', [user.uid_origin, user.name, user.address, user.email, ts, ts],
+        'VALUES (?, ?, ?, ?, ?, ?, ?, 1)', ['', user.uid_origin, user.name, user.address, user.email, ts, ts],
         function(tx, results) {
           // set user profile UID
           var uid = results.insertId;
@@ -3401,7 +3541,7 @@ function _queryExcludeInvite(key) {
       apApp.settings.queryExclude[key] = true;
       _queryExclude('_dbQuery');
     }
-  }, 1000 * 2);
+  }, 1000 * 4);
 }
 
 function _createUserProfile() {

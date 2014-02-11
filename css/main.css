@@ -69,9 +69,6 @@ article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
   display: block;
 }
-body {
-  line-height: 1;
-}
 b,
 strong {
   font-weight: bold;
@@ -114,14 +111,23 @@ html {
       -ms-text-size-adjust: 100%;
 }
 body {
+  line-height: 1;
   -webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
   -webkit-text-size-adjust: none;             /* prevent webkit from resizing text to fit */
   -webkit-user-select: none;                  /* prevent copy paste, to allow, change 'none' to 'text' */
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-font-smoothing: subpixel-antialiased;
+  text-rendering: optimizeSpeed;
   color: #002d40;
   background: #a0cbea;
   min-width: 320px;
   max-height: 100%;
   font-family: Arial, Helvetica, sans-serif;
+  overflow:hidden;
 }
 body p {
   font-size: 12px;
@@ -256,6 +262,13 @@ span.rounded img {
   width: auto;
   display: block;
   position: relative;
+}
+span.rounded img[src=""] {
+  background: url(../images/default-profile.png) no-repeat 50% 50% !important;
+  background-size: 100% 100% !important;
+  width: 104% !important;
+  height: 104% !important;
+  margin: -2% !important;
 }
 span.rounded.medium {
   width: 50px;
@@ -918,6 +931,7 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
   margin: 0 10px 20px;
 }
 .main .list-pagerer li {
+  vertical-align: top;
   display: inline-block;
   margin: 0 4px 0 0;
 }
@@ -1032,6 +1046,7 @@ body .main .form .right-side div.ui-input-text:after {
 .main .form form fieldset.ui-field-contain {
   padding: 0.6em 0;
   margin: 0;
+  overflow: hidden;
 }
 .main .form.profile {
   padding: 0 10px;
@@ -1095,6 +1110,7 @@ body .main .form .right-side div.ui-input-text:after {
   line-height: 0;
   text-align: left;
   overflow: hidden;
+  vertical-align: top;
   display: inline-block;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
@@ -1279,6 +1295,7 @@ body .main .form .right-side div.ui-input-text:after {
   list-style: none outside none;
 }
 .main .persons-inline li {
+  vertical-align: top;
   display: inline-block;
   margin: 0 7px 5px;
   text-align: center;
@@ -1645,4 +1662,62 @@ div.page .main .form form div.ui-input-text:after {
 #submit-assing-children {
   float: right;
   margin-right: 0.6em;
+}
+.iscroll-wrapper {
+  min-height: 0;
+  position: relative;
+}
+.iscroll-content {
+  overflow: hidden;
+}
+.iscroll-pullup {
+  position: absolute;    /* relative to the scroller */
+  bottom: 0;           /* at the bottom of the scroller */
+  width: 100%;
+}
+.iscroll-pulldown {
+  background: #fff;
+  height: 40px;
+  line-height: 40px;    /* Center text vertically */
+  font-weight: bold;
+  font-size: 14px;
+  color: #888;
+}
+/* MSIE not supported by iScroll, so not MSIE transitions or animation  */
+.iscroll-pulldown .iscroll-pull-icon {
+  margin-left: 0.5em;
+  display: block;
+  float: left;
+  width: 40px;
+  height: 40px;
+  background: url(../images/iscroll-pull-icon@2x.png) 0 0 no-repeat;
+  -webkit-background-size: 40px 80px;
+  -moz-background-size: 40px 80px;
+  -o-background-size: 40px 80px;
+  background-size: 40px 80px;
+  -webkit-transition: -webkit-transform 250ms linear;
+  -moz-transition: -moz-transform 250ms linear;
+  -o-transition: -o-transform 250ms linear;
+  transition: transform 250ms linear;
+  -webkit-animation: none;
+  -moz-animation: none;
+  -o-animation: none;
+  animation: none;
+}
+.iscroll-pulldown .iscroll-pull-icon {
+  -webkit-transform: rotate(0deg) translateZ(0);
+  -moz-transform: rotate(0deg);
+  -o-transform: rotate(0deg);
+  transform: rotate(0deg) translateZ(0);
+  -webkit-animation: none;
+  -moz-animation: none;
+  -o-animation: none;
+  animation: none;
+}
+.iscroll-pulldown.iscroll-pull-loading .iscroll-pull-icon,
+.iscroll-pulldown.iscroll-pull-pulled .iscroll-pull-icon {
+  -webkit-transform: rotate(-180deg) translateZ(0);
+  -moz-transform: rotate(-180deg);
+  -o-transform: rotate(-180deg);
+  transform: rotate(-180deg) translateZ(0);
 }
