@@ -264,7 +264,9 @@ function events() {
       }
       setTimeout(function() {
         var iscrollView = $.mobile.activePage.find('.iscroll-wrapper').data('mobileIscrollview');
-        iscrollView.refresh();
+        if (iscrollView) {
+          iscrollView.refresh();
+        }
       }, 1000);
     })
     .on('pagebeforeshow', '#edit-child', function(e) {
@@ -807,24 +809,53 @@ function events() {
           .find('div.input-goal').stop(true, true).slideUp(300)
           .find('input').val('');
       }
+      setTimeout(function() {
+        var iscrollView = $.mobile.activePage.find('.iscroll-wrapper').data('mobileIscrollview');
+        if (iscrollView) {
+          iscrollView.refresh();
+        }
+      }, 1000);
       e.preventDefault();
     })
     .on('click', '#submit-goal-settings', function(e) {
-      // if (!$form.find('div.input-goal input').val()) {
-      //   _messagePopup('Text field is required.', true);
-      // } else {
       $.mobile.loading('show');
-      var data = $(window).data();
+      var data = $(window).data(),
+          timestamp = parseInt(new Date().getTime() / 1000); // timestamp
+
+      data.goalRepeat = $('#goal-repeat').val();
+      data.goalTime = $('#goal-time').val();
+      data.goalInterval = $('#goal-interval').val();
+      data.start_date = new Date();
+      data.end_date = new Date();
+
+      var res = data.goalTime.split(':'),
+          goalInterval = data.goalInterval.split('-'),
+          days = parseInt(goalInterval[1]);
+      data.start_date.setUTCHours(res[0], res[1], 0, 0);
+      data.end_date.setUTCHours(res[0], res[1], 0, 0);
+      switch (goalInterval[0]) {
+        case 'day':
+          data.end_date.setUTCDate(data.start_date.getUTCDate() + days);
+          break;
+        case 'month':
+          data.end_date.setUTCMonth(data.start_date.getUTCMonth() + days);
+          break;
+        case 'year':
+          data.end_date.setUTCFullYear(data.start_date.getUTCFullYear() + days);
+          break;
+      }
+      data.start_date = parseInt(data.start_date.getTime() / 1000),
+      data.end_date = parseInt(data.end_date.getTime() / 1000);
+
       if ($(this).hasClass('is-new-goal')) {
         // insert new goal
         apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          var timestp = parseInt(new Date().getTime() / 1000); // timestamp
           tx.executeSql('INSERT INTO goals (gid_origin, uid_origin, uid, title, featured, updated, created, status) ' +
-            'VALUES (0, 0, ?, ?, 0, ?, ?, ?)', [apApp.settings.profileUID, data.title, timestp, timestp, data.status],
+            'VALUES (0, 0, ?, ?, 0, ?, ?, ?)', [apApp.settings.profileUID, data.title, timestamp, timestamp, data.status],
             function(tx, results) {
               data.gid = results.insertId;
               tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
-                'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
+                'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestamp],
                 function(tx, results) {
                   tx.executeSql('INSERT INTO age (entity_id, type, age, delta) ' +
                     'VALUES (?, "goal", ?, 0)', [data.gid, data.age],
@@ -832,39 +863,14 @@ function events() {
                       tx.executeSql('INSERT INTO topic (entity_id, type, topic, delta) ' +
                         'VALUES (?, "goal", ?, 0)', [data.gid, data.topic],
                         function(tx, results) {
-                          data.goalRepeat = $('#goal-repeat').val();
-                          data.goalTime = $('#goal-time').val();
-                          data.goalInterval = $('#goal-interval').val();
-                          data.start_date = new Date();
-                          data.end_date = new Date();
-
-                          var res = data.goalTime.split(':');
-                          data.start_date.setHours(res[0], res[1], 0, 0);
-                          data.end_date.setHours(res[0], res[1], 0, 0);
-
-                          var goalInterval = data.goalInterval.split('-');
-                          var days = parseInt(goalInterval[1]);
-                          switch (goalInterval[0]) {
-                            case 'day':
-                              data.end_date.setDate(data.start_date.getDate() + days);
-                              break;
-                            case 'month':
-                              data.end_date.setMonth(data.start_date.getMonth() + days);
-                              break;
-                            case 'year':
-                              data.end_date.setFullYear(data.start_date.getFullYear() + days);
-                              break;
-                          }
-                          var startDate = parseInt(data.start_date.getTime() / 1000),
-                            endDate = parseInt(data.end_date.getTime() / 1000);
                           tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date) ' +
-                            'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, startDate, endDate],
+                            'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, data.start_date, data.end_date],
                             function(tx, results) {
                               data.rid = results.insertId;
                               $('#reminder-persons li.active').each(function(idx, el) {
                                 var userID = $(this).data('uid');
                                 tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated) ' +
-                                  'VALUES (?, ?, ?, ?, ?)', [data.rid, userID, data.cid, data.gid, timestp],
+                                  'VALUES (?, ?, ?, ?, ?)', [data.rid, userID, data.cid, data.gid, timestamp],
                                   function(tx, results) {}, function(err) {
                                     _errorHandler(err, 741);
                                   });
@@ -891,43 +897,17 @@ function events() {
       } else {
         // Update child
         apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          var timestp = parseInt(new Date().getTime() / 1000); // timestamp
           tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
-            'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestp],
+            'VALUES (?, ?, ?, 0, ?)', [data.gid, data.cid, apApp.settings.profileUID, timestamp],
             function(tx, results) {
-              data.goalRepeat = $('#goal-repeat').val();
-              data.goalTime = $('#goal-time').val();
-              data.goalInterval = $('#goal-interval').val();
-              data.start_date = new Date();
-              data.end_date = new Date();
-
-              var res = data.goalTime.split(':');
-              data.start_date.setHours(res[0], res[1], 0, 0);
-              data.end_date.setHours(res[0], res[1], 0, 0);
-
-              var goalInterval = data.goalInterval.split('-');
-              var days = parseInt(goalInterval[1]);
-              switch (goalInterval[0]) {
-                case 'day':
-                  data.end_date.setDate(data.start_date.getDate() + days);
-                  break;
-                case 'month':
-                  data.end_date.setMonth(data.start_date.getMonth() + days);
-                  break;
-                case 'year':
-                  data.end_date.setFullYear(data.start_date.getFullYear() + days);
-                  break;
-              }
-              var startDate = parseInt(data.start_date.getTime() / 1000),
-                endDate = parseInt(data.end_date.getTime() / 1000);
               tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date) ' +
-                'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, startDate, endDate],
+                'VALUES (0, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, data.start_date, data.end_date],
                 function(tx, results) {
                   data.rid = results.insertId;
                   $('#reminder-persons li.active').each(function(idx, el) {
                     var userID = $(this).data('uid');
                     tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated) ' +
-                      'VALUES (?, ?, ?, ?, ?)', [data.rid, userID, data.cid, data.gid, timestp],
+                      'VALUES (?, ?, ?, ?, ?)', [data.rid, userID, data.cid, data.gid, timestamp],
                       function(tx, results) {}, function(err) {
                         _errorHandler(err, 894);
                       });
@@ -950,12 +930,13 @@ function events() {
                   _messagePopup('Reminder end_date: ' + data.end_date, false);
                   if (data.start_date != undefined) {
                     if (window.plugin != undefined) {
+                      var notificationDate = new Date(data.start_date*1000);
                       window.plugin.notification.local.add({
-                        id: data.gid, // is converted to a string
+                        id: data.rid, // is converted to a string
                         title: data.first_name,
                         message: data.title,
                         repeat: data.goalInterval, // Has the options of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
-                        date: data.start_date
+                        date: notificationDate
                       });
                     }
                   }
@@ -980,7 +961,6 @@ function events() {
           _errorHandler(err, 904);
         });
       }
-      // }
       e.preventDefault();
     })
     .on('click', 'button.submit-goal', function(e) {
@@ -1461,7 +1441,7 @@ function _addNewReminder(data){
         title: data.title,
         message: data.message,
         repeat: data.repeat, // Has the options of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
-        date: data.start_date
+        date: start_date
       });
     }
   }
@@ -2058,7 +2038,9 @@ function _selectChildSuccessCB(tx, results) {
     $('#my-goals li:first').after(myGoals);
     setTimeout(function() {
       var iscrollView = $('#home .iscroll-wrapper').data('mobileIscrollview');
-      iscrollView.refresh();
+      if (iscrollView) {
+        iscrollView.refresh();
+      }
     }, 1000);
   }
 }
@@ -2309,12 +2291,13 @@ function _addNewGoalSuccessCB(data) {
   _messagePopup('Reminder end_date: ' + data.end_date, false);
   if (data.start_date != undefined) {
     if (window.plugin != undefined) {
+      var notificationDate = new Date(data.start_date*1000);
       window.plugin.notification.local.add({
-        id: data.gid, // is converted to a string
+        id: data.rid, // is converted to a string
         title: data.first_name,
         message: data.title,
         repeat: data.goalInterval, // Has the options of 'hourly', 'daily', 'weekly', 'monthly', 'yearly'
-        date: data.start_date
+        date: notificationDate
       });
     }
   }
@@ -3185,12 +3168,15 @@ function _selectUploadGoalsofChildren(tx, results) {
   if (len) {
     for (var i = 0; i < len; i++) {
       var item = results.rows.item(i);
-      goals[item.gid] = {
-        completed: item.completed,
-        gid_origin: item.gid_origin,
-        cid_origin: item.cid_origin,
-        uid_origin: item.uid_origin,
-      };
+      if (goals[item.gid] == undefined){
+        goals[item.gid] = {
+          completed: item.completed,
+          gid_origin: item.gid_origin,
+          cid_origin: item.cid_origin,
+          uids: [],
+        };
+      }
+      goals[item.gid].uids.push(item.uid_origin);
     }
     items.goals = goals;
     _uploadGoalsofChildrenToSite(items);
