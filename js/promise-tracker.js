@@ -1597,7 +1597,7 @@ function _getContent(key) {
       if (response.tips != undefined) {
         apApp.settings.queryExclude.tips = false;
         _addTips(response.tips, key);
-      }
+
       if (response.goals != undefined) {
         apApp.settings.queryExclude.goals = false;
         _addGoals(response.goals, key);
@@ -2513,7 +2513,7 @@ function _getHtml(idx, dt, options) {
       if (dt.goals != undefined && dt.goals.length != 0 && opt.isNew === null) {
         var goal = dt.goals;
         $.each(goal, function(idx, val) {
-          if (val.uid == apApp.settings.profileUID) {
+          // if (val.uid == apApp.settings.profileUID) {
             var data = {
               'gid': val.gid,
               'cid': dt.cid,
@@ -2521,7 +2521,7 @@ function _getHtml(idx, dt, options) {
               'title': val.title
             };
             output += _getHtml('goalItemChecked', data);
-          }
+          // }
         });
       }
       output += '</ul>';
@@ -2712,14 +2712,14 @@ function _getHtml(idx, dt, options) {
             'first_name': dt.first_name,
             'title': val.title
           };
-          if (opt.selfUID === true) {
-            if (val.uid == apApp.settings.profileUID) {
-              output += _getHtml('myGoalItem', data);
-            }
-          }
-          else {
+          // if (opt.selfUID === true) {
+          //   if (val.uid == apApp.settings.profileUID) {
+          //     output += _getHtml('myGoalItem', data);
+          //   }
+          // }
+          // else {
             output += _getHtml('myGoalItem', data);
-          }
+          // }
         });
       }
       break;
