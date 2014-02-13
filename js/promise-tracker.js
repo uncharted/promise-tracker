@@ -1809,7 +1809,8 @@ function _dbQuery(tx) {
     'LEFT JOIN goal_index AS gi ON c.cid = gi.cid ' +
     // 'LEFT JOIN child_index AS ci ON ci.cid = c.cid ' +
     'LEFT JOIN goals AS g ON gi.gid = g.gid ' +
-    'ORDER BY c.cid DESC, gi.completed ASC', [], _selectChildSuccessCB, function(err) {
+    'WHERE gi.uid = ? ' +
+    'ORDER BY c.cid DESC, gi.completed ASC', [1], _selectChildSuccessCB, function(err) {
       _errorHandler(err, 1091);
     });
 
