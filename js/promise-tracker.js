@@ -2513,8 +2513,7 @@ function _getHtml(idx, dt, options) {
       if (dt.goals != undefined && dt.goals.length != 0 && opt.isNew === null) {
         var goal = dt.goals;
         $.each(goal, function(idx, val) {
-          var data = {
-           if (val.uid == apApp.settings.profileUID) {
+          if (val.uid == apApp.settings.profileUID) {
             var data = {
               'gid': val.gid,
               'cid': dt.cid,
