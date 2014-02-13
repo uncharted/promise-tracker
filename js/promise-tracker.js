@@ -1597,7 +1597,7 @@ function _getContent(key) {
       if (response.tips != undefined) {
         apApp.settings.queryExclude.tips = false;
         _addTips(response.tips, key);
-
+      }
       if (response.goals != undefined) {
         apApp.settings.queryExclude.goals = false;
         _addGoals(response.goals, key);
