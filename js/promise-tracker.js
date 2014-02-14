@@ -1601,8 +1601,12 @@ function _getContent(key) {
         _addUsers(response.users, key);
       }
       if (response.topics != undefined) {
-        apApp.settings.queryExclude.topics = false;
-        _addTopics(response.topics, key);
+        var topicsSize = Object.keys(response.topics).length;
+        var tidsSize =  apApp.settings.topicTids.length;
+        if (topicsSize != tidsSize) {
+          apApp.settings.queryExclude.topics = false;
+          _addTopics(response.topics, key);
+        }
       }
       _queryExclude(key);
     });
