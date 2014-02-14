@@ -600,7 +600,9 @@ div.copyright img {
 .main .ui-listview.check-listview.with-img [data-icon="plus"] a {
   padding-left: 10px;
 }
+.main .ui-listview.check-listview.with-img .double-icons a,
 .main .ui-listview.check-listview.with-img .check a {
+  text-transform: none;
   padding: 0.4em 10px .4em 65px;
 }
 .main .ui-listview.check-listview.with-img span.rounded {
@@ -609,12 +611,13 @@ div.copyright img {
   left: 8px;
   margin: -18px 0 0;
 }
-.main .ui-listview.check-listview.with-img span.rounded.small {
-  margin-top: -12px;
-}
+.main .ui-listview.check-listview.with-img span.rounded + span.rounded,
 .main .ui-listview.check-listview.with-img .check .ui-icon {
-  left: 38px;
+  left: 36px;
   margin-top: -11px;
+}
+.main .ui-listview.check-listview.with-img span.rounded.small {
+  margin-top: -12px !important;
 }
 .white .main .ui-listview a {
   color: #ca5645;
@@ -1305,7 +1308,7 @@ body .main .form .right-side div.ui-input-text:after {
 .main .persons-inline li a {
   clear: left;
   float: left;
-  width: 54px;
+  width: 64px;
   text-align: center;
   font-size: 10px;
   font-weight: 700;

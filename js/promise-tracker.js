@@ -20,6 +20,7 @@ apApp.settings.FullPath;
 apApp.settings.relationships = [];
 apApp.settings.topicTids = [];
 apApp.settings.profileUID;
+apApp.settings.DbQueryCall;
 apApp.settings.createNewChild;
 apApp.settings.registation;
 apApp.settings.queryExclude = {
@@ -30,17 +31,7 @@ apApp.settings.userProfile = {};
 apApp.settings.goalsInvite = {};
 
 // device APIs are available
-if (apApp.settings.mode == 'dev') {
-  if ("deviceready" in window) {
-    document.addEventListener("deviceready", initApp, true);
-    // document.addEventListener("resume", resumeApp, false);
-  } else {
-    $(document).on('ready', initApp);
-  }
-} else {
-  document.addEventListener("deviceready", initApp, false);
-  // document.addEventListener("resume", resumeApp, false);
-}
+document.addEventListener("deviceready", initApp, false);
 
 // Initialize All functions
 function initApp() {
@@ -48,10 +39,6 @@ function initApp() {
   events();
   html();
 }
-
-// function resumeApp() {
-//   _reloadPage();
-// }
 
 // Connect database
 function db() {
@@ -1058,17 +1045,18 @@ function events() {
 }
 
 function _reloadPage() {
+  window.localStorage.setItem("reloadedPage", $.mobile.activePage.attr('id'));
   $.mobile.loading('show');
   setTimeout(function() {
     $.mobile.loading('hide');
     var windowHref = window.location.origin + window.location.pathname;
     window.location.href = windowHref;
-    $.mobile.changePage('#home', {
-      transition: 'slide',
-      reverse: true,
-      reloadPage: true,
-      showLoadMsg: false
-    });
+    // $.mobile.changePage('#home', {
+    //   transition: 'slide',
+    //   reverse: true,
+    //   reloadPage: true,
+    //   showLoadMsg: false
+    // });
   }, 2000);
   // window.location.reload();
 }
@@ -1571,9 +1559,11 @@ function _queryExclude(key) {
   if (queryExcluded === true) {
     switch (key) {
       case '_dbQuery':
-        apApp.settings.dbPromiseTracker.transaction(_dbQuery, function(err) {
-          _errorHandler(err, 1106);
-        });
+        if (apApp.settings.DbQueryCall === false) {
+          apApp.settings.dbPromiseTracker.transaction(_dbQuery, function(err) {
+            _errorHandler(err, 1106);
+          });
+        }
         break;
       case '_dbCronHandler':
         apApp.settings.dbPromiseTracker.transaction(_dbCronHandler, function(err) {
@@ -1632,6 +1622,7 @@ function _getContent(key) {
 
 // Initialize the database
 function _dbInit(tx) {
+  apApp.settings.DbQueryCall = false;
   tx.executeSql('DROP TABLE IF EXISTS relationships');
   // tx.executeSql('DROP TABLE IF EXISTS variable');
   // tx.executeSql('DROP TABLE IF EXISTS users');
@@ -1803,14 +1794,12 @@ function _dbQuery(tx) {
       _errorHandler(err, 1083);
     });
 
-  tx.executeSql('SELECT DISTINCT(g.gid), c.image_path, c.cid, c.first_name, c.age, c.uid, ' +
+  tx.executeSql('SELECT g.gid, c.image_path, c.cid, c.first_name, c.age, c.uid, gi.uid AS guid, ' +
     'gi.completed, g.title ' +
     'FROM childs AS c ' +
     'LEFT JOIN goal_index AS gi ON c.cid = gi.cid ' +
-    // 'LEFT JOIN child_index AS ci ON ci.cid = c.cid ' +
     'LEFT JOIN goals AS g ON gi.gid = g.gid ' +
-    'WHERE gi.uid = ? ' +
-    'ORDER BY c.cid DESC, gi.completed ASC', [1], _selectChildSuccessCB, function(err) {
+    'ORDER BY c.cid DESC, gi.completed ASC', [], _selectChildSuccessCB, function(err) {
       _errorHandler(err, 1091);
     });
 
@@ -1826,17 +1815,17 @@ function _dbQuery(tx) {
     });
 
   // village-goals
-  tx.executeSql('SELECT gi.*, c.image_path, g.title ' +
+  tx.executeSql('SELECT gi.*, c.image_path, g.title, u.image_path AS user_image_path  ' +
     'FROM goal_index AS gi ' +
     'LEFT JOIN goals AS g ON g.gid = gi.gid ' +
+    'LEFT JOIN users AS u ON u.uid = gi.uid ' +
     'LEFT JOIN childs AS c ON c.cid = gi.cid', [], function(tx, results) {
       var len = results.rows.length,
           goals = '';
       if (len) {
         for (var i = 0; i < len; i++) {
           var item = results.rows.item(i);
-          // console.dirxml(item);
-          goals += _getHtml('myGoalItem', item);
+          goals += _getHtml('villageGoalItem', item);
         }
         $('#village-goals li:first').after(goals);
       }
@@ -1939,7 +1928,7 @@ function _selectUsersSuccessCB(tx, results) {
 function _selectChildSuccessCB(tx, results) {
   var resultsLen = results.rows.length;
   if (resultsLen) {
-    var children = _reorderChildrenResult(results),
+    var children = _reorderChildrenResultChildPage(results),
       addGoalPager = '<ul class="list-pagerer large children-pager">',
       pager = '<ul class="list-pagerer large children-pager">',
       myGoals = '',
@@ -2100,6 +2089,44 @@ function _reorderChildrenResult(results) {
             'featured': item.featured
           });
         }
+      }
+    }
+  }
+  return children;
+}
+
+function _reorderChildrenResultChildPage(results){
+  var children = {};
+  for (var i = 0; i < results.rows.length; i++) {
+    var item = results.rows.item(i),
+      cid = item.cid;
+    if (cid != undefined) {
+      if (children[cid] == undefined) {
+        children[cid] = {
+          'cid': cid,
+          'age': item.age,
+          'first_name': item.first_name,
+          'image_path': item.image_path,
+          // 'relationship': (item.relationship != undefined) ? item.relationship : '',
+          'goals': []
+        };
+      }
+        if (item.gid != undefined) {
+          if (item.completed == undefined) {
+            item.completed = 0;
+          }
+          if (item.featured == undefined) {
+            item.featured = 0;
+          }
+          if (item.guid == apApp.settings.profileUID) {
+            children[cid].goals.push({
+              'uid': item.guid,
+              'gid': item.gid,
+              'title': item.title,
+              'completed': item.completed,
+              'featured': item.featured
+            });
+          }
       }
     }
   }
@@ -2702,6 +2729,15 @@ function _getHtml(idx, dt, options) {
         '" alt="" /></span>' + dt.title +
         '</a></li>';
       break;
+    case 'villageGoalItem':
+      var goalClass = '';
+      console.dirxml(dt);
+      output += '<li class="double-icons" data-gid="' + dt.gid + '">' +
+        '<a href="#" data-transition="slide"><span class="rounded small">' +
+        '<img src="' + dt.image_path + '" alt="" /></span>' +
+        '<span class="rounded small"><img src="' + dt.user_image_path +
+        '" alt="" /></span>' + dt.title + '</a></li>';
+      break;
     case 'myGoals':
       if (dt.goals.length != 0) {
         var goal = dt.goals;
@@ -2713,20 +2749,13 @@ function _getHtml(idx, dt, options) {
             'first_name': dt.first_name,
             'title': val.title
           };
-          // if (opt.selfUID === true) {
-          //   if (val.uid == apApp.settings.profileUID) {
-          //     output += _getHtml('myGoalItem', data);
-          //   }
-          // }
-          // else {
-            output += _getHtml('myGoalItem', data);
-          // }
+          output += _getHtml('myGoalItem', data);
         });
       }
       break;
     case 'myChildLinkInMenu':
       output += '<li><a class="is-ico" href="#children-' + dt.cid + '" ' +
-        'data-transition="slide">' + dt.first_name +
+        'data-transition="slide" data-direction="reverse">' + dt.first_name +
         '<span class="rounded"><img src="' + dt.image_path + '" ' +
         'alt="" /></span></a></li>';
       break;
