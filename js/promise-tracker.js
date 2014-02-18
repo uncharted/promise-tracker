@@ -22,6 +22,7 @@ apApp.settings.topicTids = [];
 apApp.settings.profileUID;
 apApp.settings.DbQueryCall;
 apApp.settings.createNewChild;
+apApp.settings.Connection;
 apApp.settings.registation;
 apApp.settings.queryExclude = {
   'init': true
@@ -35,9 +36,19 @@ document.addEventListener("deviceready", initApp, false);
 
 // Initialize All functions
 function initApp() {
+  checkConnection();
   db();
   events();
   html();
+}
+
+function checkConnection() {
+  var networkState = navigator.connection.type;
+  if (Connection.NONE == networkState) {
+    apApp.settings.Connection = false;
+  } else {
+    apApp.settings.Connection = true;
+  }
 }
 
 // Connect database
@@ -729,13 +740,21 @@ function events() {
                       fx: 'scrollHorz',
                       slides: '> .item',
                       speed: 500,
-                      swipe: true,
+                      // swipe: true,
                       timeout: 0,
                       'autoHeight': 'calc',
                       pager: '> ul.list-pagerer',
                       pagerActiveClass: 'active',
                       pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
                       'log': false
+                    });
+                    $('div[id*="add-topic-"] div.featured-goals').swipeleft(function(e){
+                      $('div[id*="add-topic-"] div.featured-goals').cycle('next');
+                      e.preventDefault();
+                    });
+                    $('div[id*="add-topic-"] div.featured-goals').swiperight(function(e){
+                      $('div[id*="add-topic-"] div.featured-goals').cycle('prev');
+                      e.preventDefault();
                     });
                     childsCycleInit = true;
                   }
@@ -1042,6 +1061,14 @@ function events() {
     }
     e.preventDefault();
   });
+  $('#create-child-relationship').change(function(e) {
+    if (this.value) {
+      $('label[for="create-child-relationship"]').hide();
+    }
+    else {
+      $('label[for="create-child-relationship"]').show();
+    }
+  });
 }
 
 function _reloadPage() {
@@ -1051,20 +1078,17 @@ function _reloadPage() {
     $.mobile.loading('hide');
     var windowHref = window.location.origin + window.location.pathname;
     window.location.href = windowHref;
-    // $.mobile.changePage('#home', {
-    //   transition: 'slide',
-    //   reverse: true,
-    //   reloadPage: true,
-    //   showLoadMsg: false
-    // });
   }, 2000);
-  // window.location.reload();
 }
 
 // Transaction success callback
 function _dbSuccessHandler(tx) {
-  _getInvitation();
-  _getYourInvitation();
+  if (apApp.settings.Connection) {
+      _getInvitation();
+      _getYourInvitation();
+  } else {
+    _queryExclude('_dbQuery');
+  }
 }
 
 function _dbCronHandler(tx){
@@ -1081,7 +1105,7 @@ function _selectCronVariableCB(tx, results) {
     apApp.settings.cron = 0;
   }
   var time = apApp.settings.timestamp - apApp.settings.cron;
-  if (time > apApp.settings.cron_safe_threshold || apApp.settings.registation) {
+  if ((time > apApp.settings.cron_safe_threshold || apApp.settings.registation) && apApp.settings.Connection) {
     _uploadContent();
   } else {
     _queryExclude('_dbQuery');
@@ -1563,6 +1587,21 @@ function _queryExclude(key) {
           apApp.settings.dbPromiseTracker.transaction(_dbQuery, function(err) {
             _errorHandler(err, 1106);
           });
+          apApp.settings.dbPromiseTracker.transaction(function(){
+            var reloadedPage = window.localStorage.getItem("reloadedPage");
+            if (reloadedPage) {
+              if (reloadedPage == 'goal-settings') {
+                var cid = $(window).data('cid');
+                reloadedPage = 'add-goal-' + cid;
+              }
+              $.mobile.changePage('#' + reloadedPage, {
+                transition: "none"
+              });
+            }
+            $('#list-children').css('visibility', 'visible');
+          }, function(err) {
+            _errorHandler(err, 1585);
+          });
         }
         break;
       case '_dbCronHandler':
@@ -1722,7 +1761,11 @@ function _dbInit(tx) {
       apApp.settings.profileUID = 1;
       if (len === 0) {
         apApp.settings.registation = true;
-        _getFirstContent('_registerUser');
+        if (apApp.settings.Connection) {
+          _getFirstContent('_registerUser');
+        } else{
+          _getEthernetConntent();
+        }
       } else {
         apApp.settings.registation = false;
         apApp.settings.userProfile = results.rows.item(0);
@@ -2021,29 +2064,6 @@ function _selectChildSuccessCB(tx, results) {
     }, function(err) {
       _errorHandler(err, 1263);
     });
-    // assign-village
-    tx.executeSql('SELECT u.uid, u.name, u.image_path ' +
-      'FROM users AS u ' +
-      'ORDER BY u.uid ASC', [],
-      function(tx, results) {
-        var len = results.rows.length;
-        if (len) {
-          var assignProfile = '';
-          for (var i = 0; i < len; i++) {
-            var item = results.rows.item(i);
-            assignProfile += _getHtml('assignProfile', item);
-          }
-          $('ul.assign-village-list').each(function(idx, el) {
-            $('li:last', this).after(assignProfile);
-            if ($(this).parents('div.ui-page').get(0)) {
-              $(this).listview('refresh');
-              $(this).parents('div.ui-page').trigger('create');
-            }
-          });
-        }
-      }, function(err) {
-        _errorHandler(err, 1284);
-      });
     if (resultsLen > 1) {
       // add pager in child page
       $(pager).appendTo('div[data-role="page"][id*="' + options.pagerName + '"] .child.item');
@@ -2059,6 +2079,29 @@ function _selectChildSuccessCB(tx, results) {
       }
     }, 1000);
   }
+  // assign-village
+  tx.executeSql('SELECT u.uid, u.name, u.image_path ' +
+    'FROM users AS u ' +
+    'ORDER BY u.uid ASC', [],
+    function(tx, results) {
+      var len = results.rows.length;
+      if (len) {
+        var assignProfile = '';
+        for (var i = 0; i < len; i++) {
+          var item = results.rows.item(i);
+          assignProfile += _getHtml('assignProfile', item);
+        }
+        $('ul.assign-village-list').each(function(idx, el) {
+          $('li:last', this).after(assignProfile);
+          if ($(this).parents('div.ui-page').get(0)) {
+            $(this).listview('refresh');
+            $(this).parents('div.ui-page').trigger('create');
+          }
+        });
+      }
+    }, function(err) {
+      _errorHandler(err, 1284);
+    });
 }
 
 function _reorderChildrenResult(results) {
@@ -2174,7 +2217,7 @@ function _selectSearchPageSuccessCB(tx, results) {
       $('#home.ui-page').trigger('create');
     }
     $.mobile.changePage('#home', {
-      transition: "fade"
+      transition: "none"
     });
   } else {
     _removeLoginPages();
@@ -2735,7 +2778,6 @@ function _getHtml(idx, dt, options) {
       break;
     case 'villageGoalItem':
       var goalClass = '';
-      console.dirxml(dt);
       output += '<li class="double-icons" data-gid="' + dt.gid + '">' +
         '<a href="#" data-transition="slide"><span class="rounded small">' +
         '<img src="' + dt.image_path + '" alt="" /></span>' +
@@ -2801,6 +2843,16 @@ function _getHtml(idx, dt, options) {
       } else {
         output += '    <h3>Sorry your invite was not accepted by ' + dt.email + '</h3>';
       }
+      output += '  </div>';
+      output += '  <div class="popup-buttons">';
+      output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
+      output += '  </div>';
+      output += '</div>';
+      break;
+    case 'PopupConnection':
+      output += '<div id="popup-connection" data-role="popup">';
+      output += '  <div class="popup-holder">';
+      output += '    <h3>The connection to the server has failed. Please try again later ...</h3>';
       output += '  </div>';
       output += '  <div class="popup-buttons">';
       output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
@@ -3804,6 +3856,18 @@ function _registerUser() {
   $.mobile.changePage('#registration-first-step', {
     transition: "fade"
   });
+}
+
+function _getEthernetConntent(){
+  var popup = _getHtml('PopupConnection');
+  $.mobile.loading('hide');
+  $.mobile.changePage('#home', {
+    transition: "fade"
+  });
+  $('#home').append(popup);
+  $('#popup-connection').popup();
+  $('#popup-connection').popup('enable');
+  $('#popup-connection').popup('open');
 }
 
 })(jQuery);
