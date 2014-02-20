@@ -456,6 +456,41 @@ function events() {
         }
       });
     })
+    .on('pageinit', '#sign-in', function() {
+      $("#sign-in form").validate({
+         messages: {
+           'sign-in-email' : {
+             required: "Email is required",
+             email: "Please enter correct email"
+           },
+           'sign-in-password' : {
+             required :  "Password is required"
+           }
+        },
+        errorPlacement: function(error, element) {
+          $("#message-popup label").hide(0, function() {
+            $(this).remove();
+          });
+          setTimeout(function() {
+            $(error).hide(200, function() {
+              $(this).remove();
+            });
+          }, 8000);
+          error.appendTo("#message-popup");
+        },
+        submitHandler: function(form) {
+          // some other code
+          var data = {
+            'email' : $("#sign-in form #sign-in-email").val(),
+            'password' : $("#sign-in form #sign-in-password").val()
+          }
+          if ( $('#submit-sign-in').attr('data-disabled') == 'false') {
+            _loginToApp(data);
+            $('#submit-sign-in').attr('data-disabled','true');
+          }
+        }
+      });
+    })
     .on('change', 'input[type="date"]', function() {
       var inputName = $(this).attr('name');
       var $labelFor = $('label[for="' + inputName + '"]');
@@ -1023,6 +1058,14 @@ function events() {
         _errorHandler(err, 933);
       });
       e.preventDefault();
+    })
+    .on('change', '.ui-select .ui-btn select', function(e) {
+      if (this.value) {
+        $(this).parents('.ui-select').addClass('not-empty');
+      }
+      else {
+        $(this).parents('.ui-select').removeClass('not-empty');
+      }
     });
 
   // form submit
@@ -3577,9 +3620,13 @@ function _onFail(evt) {
 
 function _importUsersToApp(users, key) {
   var userInvite = [];
+  var children = [];
+  var size_children = 0;
+  var size_users = Object.keys(users).length;
+  var j = 0;
   var ts = parseInt(new Date().getTime() / 1000);
-  $.each(users, function(uid_origin, user) {
-    apApp.settings.dbPromiseTracker.transaction(function(tx) {
+  apApp.settings.dbPromiseTracker.transaction(function(tx) {
+    $.each(users, function(uid_origin, user) {
       tx.executeSql('INSERT INTO users (image_path, uid_origin, name, last_name, ' +
         'email, updated, created, status) ' +
         'VALUES (?, ?, ?, ?, ?, ?, ?, 1)', ['', user.uid_origin, user.name, user.last_name, user.email, ts, ts],
@@ -3589,56 +3636,71 @@ function _importUsersToApp(users, key) {
           userInvite[uid_origin] = uid;
           if (user.photo != undefined) _downloadUserPhoto(user);
           _messagePopup('User ' + user.name + ' was created');
-          if (user.children == undefined) _queryExcludeInvite(key);
+          //if (user.children == undefined) _queryExcludeInvite(key);
           if (user.children != undefined) {
-            var size = Object.keys(user.children).length;
-            var i = 0;
-            $.each(user.children, function(i, child) {
-              // Create childs
-              tx.executeSql('INSERT INTO childs (cid_origin, uid, first_name, ' +
-                'last_name, birth_date, age, updated, created, status) ' +
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.cid_origin, uid, child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
-                function(tx, results) {
-                  i++;
-                  if (i == size) _queryExcludeInvite(key);
-                  _messagePopup('Child ' + child.first_name + ' from ' + user.name + ' was created');
-                  var cid = results.insertId;
-                  if (child.photo != undefined) _downloadChildPhoto(child);
-                  if (child.child_index != undefined) {
-                    //create child_index
-                    $.each(child.child_index, function(i, relationship) {
-                      if (userInvite[relationship.uid] != user.uid_origin) {
-                        tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
-                          'VALUES (?, ?, ?)', [cid, userInvite[relationship.uid], relationship.relationship],
-                          function(tx, results) {}, function(err) {
-                            _errorHandler(err, 2730);
-                          });
-                      }
-                    });
-                  }
-                  if (child.reminders != undefined) {
-                    _updateReminderGoalIndex(tx, child, userInvite, apApp.settings.goalsInvite);
-                  }
-                  if (child.goal_index != undefined) {
-                    //create child_index
-                    $.each(child.goal_index, function(i, goal) {
-                      if (apApp.settings.goalsInvite[goal.gid_origin] != undefined &&
-                        userInvite[goal.uid_origin] != undefined) {
-                        tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
-                          'VALUES (?, ?, ?, ?, ?)', [apApp.settings.goalsInvite[goal.gid_origin], cid, userInvite[goal.uid_origin], goal.completed, child.updated],
-                          function(tx, results) {}, function(err) {
-                            _errorHandler(err, 2741);
-                          });
-                      }
-                    });
-                  }
-                }, function(err) {
-                  _errorHandler(err, 2745);
-                });
+            $.each(user.children, function(i, child){
+              size_children++;
+              children.push(child);
             });
+          }
+          j++;
+          if (j == size_users) {
+            if (size_children > 0) {
+              _importChildrenToApp(tx,children,size_children,userInvite,apApp.settings.goalsInvite,key);
+            } else {
+              _queryExcludeInvite(key);
+            }
           }
         });
     });
+  });
+}
+
+function _importChildrenToApp(tx,children,size_children,users,goals,key){
+  var j = 0;
+  $.each(children, function(i, child) {
+      // Create childs
+      var uid = users[child.uid_origin];
+      tx.executeSql('INSERT INTO childs (cid_origin, uid, first_name, ' +
+        'last_name, birth_date, age, updated, created, status) ' +
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [child.cid_origin, uid, child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status],
+        function(tx, results) {
+          _messagePopup('Child ' + child.first_name + ' was created');
+          var cid = results.insertId;
+          if (child.photo != undefined) _downloadChildPhoto(child);
+          if (child.child_index != undefined) {
+            //create child_index
+            $.each(child.child_index, function(i, relationship) {
+              if (users[relationship.uid] != undefined) {
+                tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
+                  'VALUES (?, ?, ?)', [cid, users[relationship.uid], relationship.relationship],
+                  function(tx, results) {}, function(err) {
+                    _errorHandler(err, 2730);
+                  });
+              }
+            });
+          }
+          if (child.reminders != undefined) {
+            _updateReminderGoalIndex(tx, child, users, goals);
+          }
+          if (child.goal_index != undefined) {
+            //create child_index
+            $.each(child.goal_index, function(i, goal) {
+              if (goals[goal.gid_origin] != undefined &&
+                users[goal.uid_origin] != undefined) {
+                tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated) ' +
+                  'VALUES (?, ?, ?, ?, ?)', [goals[goal.gid_origin], cid, users[goal.uid_origin], goal.completed, child.updated],
+                  function(tx, results) {}, function(err) {
+                    _errorHandler(err, 2741);
+                  });
+              }
+            });
+          }
+          j++;
+          if (j == size_children) _queryExcludeInvite(key);
+        }, function(err) {
+          _errorHandler(err, 2745);
+        });
   });
 }
 
@@ -3868,6 +3930,25 @@ function _getEthernetConntent(){
   $('#popup-connection').popup();
   $('#popup-connection').popup('enable');
   $('#popup-connection').popup('open');
+}
+
+function _loginToApp(data){
+  $.mobile.loading('show');
+  $.getJSON(apApp.settings.restUrl + "login?jsoncallback=?&login=" +
+    data.email + '&pass=' + data.password,
+    function(response) {
+      if (response.login == 0) {
+        _messagePopup('Sorry, unrecognized username or password.',true);
+        $('#submit-sign-in').attr('data-disabled','false');
+        $.mobile.loading('hide');
+      } else if (response.login == 1) {
+        if (response.results.goals != undefined) {
+          _getGoalsIds(response.results, 'loginRegister');
+        } else if (response.results.users != undefined) {
+          _importUsersToApp(response.results.users, 'loginRegister');
+        }
+      }
+    });
 }
 
 })(jQuery);

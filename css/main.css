@@ -1478,6 +1478,10 @@ body .main .form .right-side div.ui-input-text:after {
   padding-bottom: .4em;
   padding-left: 10px;
   padding-right: 25px;
+  color: #b5b5b5 !important;
+}
+.main .ui-listview.my-childrens .ui-select.not-empty .ui-btn-inner {
+  color: #002d40 !important;
 }
 .main .ui-listview.my-childrens div.ui-btn-text {
   padding: 10px 0 0;

@@ -333,8 +333,9 @@
       <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
         <h1 class="logo">Promise Tracker</h1>
       </header><!-- /#header -->
-      <section class="main" data-role="content">
+      <section class="main" data-role="content" data-iscroll="">
         <h2 class="page-title first-child">Step 1. Create your account</h2>
+        <p style="text-align: center;">Already a member? <a href="#sign-in">Sign in</a></p>
         <div class="form create-profile">
           <form action="#" method="post" accept-charset="utf-8">
             <div class="ui-field-contain centered">
@@ -377,6 +378,30 @@
             <div class="ui-field-contain buttons">
               <label for="submit-create-profile" class="ui-hidden-accessible">Next:</label>
               <button type="submit" id="submit-create-profile" class="ui-btn">Next</button>
+            </div>
+          </form>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <div data-role="page" data-title="Sign-In" id="sign-in" data-add-back-btn="true" class="page">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">Sign in</h2>
+        <div class="form sign-in">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain">
+              <label for="sign-in-email" class="placeholder">Email</label>
+              <input type="email" required="required email" class="create-profile-input" name="sign-in-email" id="sign-in-email" value="" />
+            </div>
+            <div class="ui-field-contain">
+              <label for="sign-in-password" class="placeholder">Password</label>
+              <input type="password" required="required" class="create-profile-input" name="sign-in-password" id="sign-in-password" value="" />
+            </div>
+            <div class="ui-field-contain buttons">
+              <label for="submit-sign-in" class="ui-hidden-accessible">Login:</label>
+              <button type="submit" id="submit-sign-in" class="ui-btn">Login</button>
             </div>
           </form>
         </div>
