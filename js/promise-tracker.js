@@ -43,10 +43,15 @@ function initApp() {
 }
 
 function checkConnection() {
-  var networkState = navigator.connection.type;
-  if (Connection.NONE == networkState) {
-    apApp.settings.Connection = false;
-  } else {
+  if (apApp.settings.mode != 'dev') {
+    var networkState = navigator.connection.type;
+    if (Connection.NONE == networkState) {
+      apApp.settings.Connection = false;
+    } else {
+      apApp.settings.Connection = true;
+    }
+  }
+  else {
     apApp.settings.Connection = true;
   }
 }
