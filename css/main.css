@@ -239,11 +239,21 @@ body .ui-mobile .ui-page {
 }
 /* round */
 .rounded {
-  border-radius: 50% !important;
+  /*border-radius: 50% !important;*/
   border-top-left-radius: 50% !important;
   border-top-right-radius: 50% !important;
-  border-bottom-left-radius: 50% !important;
   border-bottom-right-radius: 50% !important;
+  border-bottom-left-radius: 50% !important;
+  /*-moz-border-radius: 50% !important;*/
+  -moz-border-radius-topleft: 50% !important;
+  -moz-border-radius-topright: 50% !important;
+  -moz-border-radius-bottomright: 50% !important;
+  -moz-border-radius-bottomleft: 50% !important;
+  /*-webkit-border-radius: 50% !important;*/
+  -webkit-border-top-left-radius: 50% !important;
+  -webkit-border-top-right-radius: 50% !important;
+  -webkit-border-bottom-right-radius: 50% !important;
+  -webkit-border-bottom-left-radius: 50% !important;
   overflow: hidden !important;
   border: 2px solid #fff !important;
 }
@@ -254,6 +264,17 @@ span.rounded {
   width: 35px;
   height: 35px;
   overflow: hidden;
+}
+span.rounded span.rounded-inner {
+  border-radius: 500px !important;
+  -moz-border-radius: 500px !important;
+  -webkit-border-radius: 500px !important;
+  overflow: hidden !important;
+  display: block !important;
+  height: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 span.rounded img {
   overflow: hidden;
@@ -599,6 +620,12 @@ div.copyright img {
 }
 .main .ui-listview.check-listview .check.checked .ui-icon {
   background-position: -44px -67px;
+}
+.main .ui-listview.check-listview .double-icons {
+  display: none;
+}
+.main .ui-listview.check-listview .double-icons.active {
+  display: block;
 }
 .main .ui-listview.check-listview.with-img [data-icon="plus"] a {
   padding-left: 10px;
@@ -1373,7 +1400,18 @@ body .main .form .right-side div.ui-input-text:after {
   text-align: center;
 }
 .main .persons-inline.in-the-village li {
+  opacity: 0.2;
+  -webkit-transition: opacity 225ms ease-out;
+  -moz-transition: opacity 225ms ease-out;
+  -o-transition: opacity 225ms ease-out;
+  transition: opacity 225ms ease-out;
+}
+.main .persons-inline.in-the-village li.add-new,
+.main .persons-inline.in-the-village li.active {
   opacity: 1;
+}
+.main .persons-inline.in-the-village li .rounded {
+  margin-bottom: 4px;
 }
 .main #reminder-persons li {
   opacity: 0.2;
@@ -1446,9 +1484,10 @@ body .main .form .right-side div.ui-input-text:after {
   float: left;
   margin: -10px 10px 0 0;
 }
-.main .ui-listview.my-childrens a span {
+.main .ui-listview.my-childrens a > span {
   width: 90px;
-  display: inline-block;
+  display: block;
+  float: left;
   text-align: right;
   padding-right: 10px;
 }
@@ -1737,4 +1776,13 @@ div.page .main .form form div.ui-input-text:after {
 }
 #list-children {
   visibility: hidden;
+}
+#goal-settings .edit-holder {
+  display: none;
+}
+#goal-settings.edit .edit-holder {
+  display: block;
+}
+#goal-settings.edit .add-holder {
+  display: none;
 }

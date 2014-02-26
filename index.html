@@ -18,6 +18,14 @@
     <script type="text/javascript" charset="utf-8" src="js/contrib/iscroll.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.mobile.iscrollview.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/promise-tracker.js"></script>
+    <script type="text/javascript" charset="utf-8">
+      window.onerror = function(msg, url, line) {
+        var idx = url.lastIndexOf("/");
+        if(idx > -1) {url = url.substring(idx+1);}
+          alert("ERROR in " + url + " (line #" + line + "): " + msg);
+          return false; //suppress Error Alert;
+        };
+    </script>
   </head>
   <body>
     <!-- Page Front  -->
@@ -148,7 +156,11 @@
                 </div>
               </div>
             </div>
-            <div class="ui-field-contain buttons">
+            <div class="ui-field-contain edit-holder buttons">
+              <label for="edit-goal-settings" class="ui-hidden-accessible">Edit:</label>
+              <button type="submit" id="edit-goal-settings" name="edit-goal-settings" class="ui-btn">Edit</button>
+            </div>
+            <div class="ui-field-contain add-holder buttons">
               <label for="submit-goal-settings" class="ui-hidden-accessible">Add:</label>
               <button type="submit" id="submit-goal-settings" name="submit-goal-settings" class="ui-btn">Add</button>
             </div>
@@ -342,7 +354,7 @@
               <a href="#create-profile-upload-photo-popup" id="create-profile-upload-photo" class="upload-photo to-profile middle" data-rel="popup" data-position-to="window" data-transition="pop">Profile Image</a>
               <div id="create-profile-photo" style="display: none;" class="image-holder">
                 <a href="#create-profile-upload-photo-popup" data-rel="popup" data-position-to="window" data-transition="pop">
-                  <span class="rounded"><img id="create-profile-photo-img" src="" alt="" /></span>
+                  <span class="rounded"><span class="rounded-inner"><img id="create-profile-photo-img" src="" alt="" /></span></span>
                 </a>
               </div>
               <div id="create-profile-upload-photo-popup" data-role="popup">
@@ -428,7 +440,7 @@
               <a href="#create-child-upload-photo-popup" id="create-child-upload-photo" class="upload-photo to-child" data-rel="popup" data-position-to="window" data-transition="pop">Child Image</a>
               <div id="create-child-photo" style="display: none;" class="image-holder">
                 <a href="#create-child-upload-photo-popup" data-rel="popup" data-position-to="window" data-transition="pop">
-                  <span class="rounded"><img id="create-child-photo-img" src="" alt=""/></span>
+                  <span class="rounded"><span class="rounded-inner"><img id="create-child-photo-img" src="" alt=""/></span></span>
                 </a>
               </div>
               <div id="create-child-upload-photo-popup" data-role="popup">
