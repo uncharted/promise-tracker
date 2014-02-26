@@ -721,6 +721,7 @@ body .main .ui-btn-inner,
 }
 .main .theme-b .featured-goals {
   margin: 0 -10px;
+  overflow: hidden;
 }
 .main .theme-b .featured-goals .item {
   width: 100%;

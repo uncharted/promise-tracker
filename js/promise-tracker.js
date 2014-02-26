@@ -86,6 +86,9 @@ function html() {
   // registration section
   // step 1: Create profile
   $('#submit-create-profile').on('click', function(e) {
+    if (apApp.settings.mode != 'dev') {
+      window.plugin.notification.local.cancelAll();
+    }
     $("#message-popup label").hide(200, function() {
       $(this).remove();
     });
@@ -321,34 +324,35 @@ function events() {
       }
     })
     .on('pagebeforeshow', '#goal-settings', function(e, data) {
+      // console.dirxml(12345);
       // apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        // var timestp = parseInt(new Date().getTime() / 1000); // timestamp
-        // tx.executeSql('INSERT INTO users (uid_origin, password, name, last_name, email, image_path, updated, created, status, update_photo) ' +
-        //   'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        //   [0, 'testq', 'testqw', 'sadasdq', 'testusq@mail.dev', 'images/img/img01.jpg', timestp, timestp, 1, 1],
-        //   function(tx, results) {
-        //     _messagePopup('Person has been added.', false);
-        //   }, function(err) {
-        //     _errorHandler(err, 323);
-        //   });
+      //   var timestp = parseInt(new Date().getTime() / 1000); // timestamp
+      //   tx.executeSql('INSERT INTO users (uid_origin, password, name, last_name, email, image_path, updated, created, status, update_photo) ' +
+      //     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      //     [0, 'testq', 'testqw', 'sadasdq', 'testusq@mail.dev', 'images/img/img01.jpg', timestp, timestp, 1, 1],
+      //     function(tx, results) {
+      //       _messagePopup('Person has been added.', false);
+      //     }, function(err) {
+      //       _errorHandler(err, 323);
+      //     });
 
-        // tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
-        //   'VALUES (?, ?, ?)',
-        //   [1, 2, 2],
-        //   function(tx, results) {
-        //     _messagePopup('Per222.', false);
-        //   }, function(err) {
-        //     _errorHandler(err, 323);
-        //   });
+      //   tx.executeSql('INSERT INTO child_index (cid, uid, relationship) ' +
+      //     'VALUES (?, ?, ?)',
+      //     [1, 2, 2],
+      //     function(tx, results) {
+      //       _messagePopup('Per222.', false);
+      //     }, function(err) {
+      //       _errorHandler(err, 323);
+      //     });
 
-        // tx.executeSql('SELECT * FROM users', [], _selectShowContentCB,
-        //   function(err) {
-        //     _errorHandler(err, 317);
-        //   });
-        //  tx.executeSql('SELECT * FROM child_index', [], _selectShowContentCB,
-        //   function(err) {
-        //     _errorHandler(err, 317);
-        //   });
+      //   tx.executeSql('SELECT * FROM users', [], _selectShowContentCB,
+      //     function(err) {
+      //       _errorHandler(err, 317);
+      //     });
+      //    tx.executeSql('SELECT * FROM child_index', [], _selectShowContentCB,
+      //     function(err) {
+      //       _errorHandler(err, 317);
+      //     });
       // });
       var winData = $(window).data();
       $('#goal-settings-child-image').attr('src', winData.image_path);
@@ -397,7 +401,6 @@ function events() {
                 $('#reminder-persons li[data-uid="' + item.uid + '"]').addClass('active');
               }
               var item = results.rows.item(1);
-              console.dirxml(item);
               $('#goal-repeat').val(item.repeat).change().attr('rel', item.repeat);
               $('#goal-time').val(item.time).change().attr('rel', item.time);
               $('#goal-interval').val(item.interval).change().attr('rel', item.interval);
@@ -729,27 +732,53 @@ function events() {
       e.preventDefault();
     })
     .on('click', 'ul.ui-listview li span.delete', function() {
-      if ($(this).parents('li').hasClass('checked-goal')) {
-        $.mobile.loading('show');
-        var $goal = $(this).parents('li');
-        var data = {};
-        data.cid = $goal.data('cid');
-        data.gid = $goal.data('gid');
-        data.title = $goal.find('a').text();
-        // Update child
-        apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          tx.executeSql('DELETE FROM goal_index ' +
-            'WHERE gid = ? AND cid = ?', [data.gid, data.cid],
-            function(tx, results) {
-              _deleteGoal(tx, results, data, $goal);
-            },
-            function(err) {
-              _errorHandler(err, 716);
-            });
-        }, function(err) {
-          _errorHandler(err, 717);
-        });
-      }
+      var $goal = $(this).parents('li');
+      $(window).data('cid', $goal.data('cid'));
+      $(window).data('gid', $goal.data('gid'));
+      $(window).data('title', $goal.find('a').text());
+      $('.ui-page-active div.confirm-goal').popup('open');
+    })
+    .on('click', '.ui-page-active div.confirm-goal .confirm', function() {
+      var winData = $(window).data();
+      $.mobile.loading('show');
+      // Update child
+      apApp.settings.dbPromiseTracker.transaction(function(tx) {
+        tx.executeSql('SELECT rid FROM reminder_index ' +
+          'WHERE gid = ? AND cid = ? AND uid = ?', [winData.gid, winData.cid, apApp.settings.profileUID],
+          function(tx, results) {
+            var len = results.rows.length;
+            if (len) {
+              for (var i = 0; i < len; i++) {
+                var item = results.rows.item(i);
+                if (apApp.settings.mode != 'dev') {
+                  window.plugin.notification.local.cancel(item.rid);
+                }
+              }
+              tx.executeSql('DELETE FROM reminder_index ' +
+                'WHERE gid = ? AND cid = ? AND uid = ?', [winData.gid, winData.cid, apApp.settings.profileUID],
+                function(tx, results) {
+                  var len = results.rows.length;
+                  if (len) {
+                    _messagePopup('Reminder was deleted.', false);
+                  }
+                },
+                function(err) {
+                  _errorHandler(err, 714);
+                });
+            }
+          },
+          function(err) {
+            _errorHandler(err, 715);
+          });
+        tx.executeSql('DELETE FROM goal_index ' +
+          'WHERE gid = ? AND cid = ?', [winData.gid, winData.cid],
+          _deleteGoal,
+          function(err) {
+            _errorHandler(err, 716);
+          });
+      }, function(err) {
+        _errorHandler(err, 717);
+      });
     })
     .on('click', 'ul.ui-listview li span.edit', function() {
       var data = {
@@ -977,7 +1006,6 @@ function events() {
       if (data.goalInterval != data.goalIntervalOld ||
           data.goalRepeat != data.goalRepeatOld ||
           data.goalTime != data.goalTimeOld) {
-        console.dirxml(data);
         apApp.settings.dbPromiseTracker.transaction(function(tx) {
           tx.executeSql('SELECT DISTINCT(r.rid), r.repeat, r.time, r.interval ' +
           'FROM reminder AS r ' +
@@ -988,7 +1016,6 @@ function events() {
             if (len) {
               for (var i = 0; i < len; i++) {
                 var item = results.rows.item(i);
-                console.dirxml(item);
                 tx.executeSql('UPDATE reminder ' +
                   'SET repeat = ?, time = ?, interval = ?, end_date = ? ' +
                   'WHERE rid = ?', [item.repeat, item.time, item.interval, data.timestamp, item.rid],
@@ -2623,16 +2650,18 @@ function _addNewGoal(data) {
   }
 }
 
-function _deleteGoal(tx, results, data, $goal) {
-  var goalItem = _getHtml('goalItem', data);
+function _deleteGoal(tx, results) {
+  var winData = $(window).data();
+  var goalItem = _getHtml('goalItem', winData);
 
-  $goal.slideUp(300);
-  $('#search-goals-' + data.cid)
+  $('.ui-page-active li.checked-goal[data-gid="' + winData.gid + '"][data-cid="' + winData.cid + '"]').slideUp(300);
+  $('#search-goals-' + winData.cid)
     .find('div.listview-filter ul')
     .prepend(goalItem);
   $('.ui-page .main .listview-filter .ui-listview').listview('refresh');
+  $('.ui-page-active div.confirm-goal').popup('close');
   $.mobile.loading('hide');
-  _messagePopup('Goal "' + data.title + '" has been deleted', false);
+  _messagePopup('Goal "' + winData.title + '" has been deleted', false);
 }
 
 // Action message
@@ -2789,6 +2818,15 @@ function _getHtml(idx, dt, options) {
         });
       }
       output += '</ul>';
+      output += '<div class="confirm-goal" data-role="popup">';
+      output += '<div class="popup-holder">';
+      output += '<h3>Delete goal?</h3>';
+      output += '</div>';
+      output += '<div class="popup-buttons">';
+      output += '<a href="#" class="confirm">Yes</a>';
+      output += '<a href="#" class="close">No</a>';
+      output += '</div>';
+      output += '</div>';
       output += '</section>';
       output += '</div>';
       break;
