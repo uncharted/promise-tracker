@@ -998,6 +998,7 @@ function events() {
               }
             });
           }
+          _messagePopup('Updated');
           $.mobile.loading('hide');
         });
       }
