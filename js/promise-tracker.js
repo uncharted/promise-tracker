@@ -973,11 +973,11 @@ function events() {
       e.preventDefault();
     })
     .on('click', '#edit-goal-settings', function(e) {
-      $.mobile.loading('show');
       var data = _formatGoalData();
       if (data.goalInterval != data.goalIntervalOld ||
           data.goalRepeat != data.goalRepeatOld ||
           data.goalTime != data.goalTimeOld) {
+        $.mobile.loading('show');
         apApp.settings.dbPromiseTracker.transaction(function(tx) {
           if (data.reminder != undefined) {
             $.each(data.reminder, function(rid, reminderItem) {
