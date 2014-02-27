@@ -1411,7 +1411,7 @@ body .main .form .right-side div.ui-input-text:after {
 .main .persons-inline.in-the-village li.active {
   opacity: 1;
 }
-.main .persons-inline.in-the-village li .rounded {
+.main .persons-inline li .rounded {
   margin-bottom: 4px;
 }
 .main #reminder-persons li {
@@ -1584,9 +1584,6 @@ ul.ui-listview li span.delete {
   text-indent: -9999px;
   text-align: left;
 }
-ul.ui-listview li span.edit {
-  display: none;
-}
 ul.ui-listview li span.edit:after,
 ul.ui-listview li span.delete:after {
   content: "";
@@ -1611,10 +1608,10 @@ ul.ui-listview li span.edit:after {
   background-position: -176px -67px;
 }
 ul.ui-listview li.prepare-remove a {
-  left: -34px !important;
+  left: -68px !important;
 }
 ul.ui-listview li.prepare-remove .ui-icon {
-  left: -26px !important;
+  left: -60px !important;
 }
 
 /* page */
