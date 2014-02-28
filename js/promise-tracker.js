@@ -345,8 +345,8 @@ function events() {
               for (var i = 0; i < len; i++) {
                 var item = results.rows.item(i);
                 var inlinePerson = _getHtml('inlinePerson', item);
-                var person = '<span class="rounded"><span class="rounded-inner"><img src="' +
-                  item.image_path + '" alt="" /></span></span>';
+                var person = '<span class="rounded"><img src="' +
+                  item.image_path + '" alt="" /></span>';
                 $reminderPersons.append(inlinePerson);
               }
               $reminderPersons.find('li[data-uid="' + uid + '"]').addClass('user active');
@@ -921,8 +921,8 @@ function events() {
                               function(tx, results) {}, function(err) {
                                 _errorHandler(err, 738);
                               });
-                            tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated) ' +
-                              'VALUES (?, ?, ?, ?, ?)', [data.rid, userID, data.cid, data.gid, data.timestamp],
+                            tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
+                              'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp],
                               function(tx, results) {}, function(err) {
                                 _errorHandler(err, 741);
                               });
@@ -951,8 +951,8 @@ function events() {
               data.rid = results.insertId;
               $('#reminder-persons li.active').each(function(idx, el) {
                 var userID = $(this).data('uid');
-                tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated) ' +
-                  'VALUES (?, ?, ?, ?, ?)', [data.rid, userID, data.cid, data.gid, data.timestamp],
+                tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
+                  'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp],
                   function(tx, results) {}, function(err) {
                     _errorHandler(err, 894);
                   });
@@ -1518,8 +1518,8 @@ function _insertReminder(tx, reminder, users, goals){
       reminder.rid = results.insertId;
       $.each(reminder.uids,function(i,uid_origin){
        if (users[uid_origin] != undefined) {
-         tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated) ' +
-           'VALUES (?, ?, ?, ?, ?)', [reminder.rid, users[uid_origin], reminder.cid, reminder.gid, apApp.settings.cron],
+         tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
+           'VALUES (?, ?, ?, ?, ?, 0)', [reminder.rid, users[uid_origin], reminder.cid, reminder.gid, apApp.settings.cron],
            function(tx, results) {
              if (users[uid_origin] == 1)  _addNewReminder(reminder);
            }, function(err) {
@@ -1549,8 +1549,8 @@ function _updateReminder(tx, reminder, users, goals) {
           if (reminder.uids != undefined) {
             $.each(reminder.uids, function(i,uid_origin) {
               if (users[uid_origin] != undefined) {
-                tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated) ' +
-                  'VALUES (?, ?, ?, ?, ?)',
+                tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
+                  'VALUES (?, ?, ?, ?, ?, 1)',
                   [reminder.rid, users[uid_origin], reminder.cid, reminder.gid, apApp.settings.cron],
                   function(tx, results) {
                     if (users[uid_origin] == 1) {
@@ -1835,7 +1835,7 @@ function _dbInit(tx) {
   tx.executeSql('CREATE TABLE IF NOT EXISTS reminder (rid INTEGER PRIMARY KEY, ' +
     'rid_origin INTEGER, title, message, repeat, time, interval, start_date, end_date, updated INTEGER)');
   tx.executeSql('CREATE TABLE IF NOT EXISTS reminder_index (rid INTEGER, ' +
-    'uid INTEGER, cid INTEGER, gid INTEGER, updated INTEGER)');
+    'uid INTEGER, cid INTEGER, gid INTEGER, updated INTEGER, skipped INTEGER)');
 
   // Create relationships
   tx.executeSql('INSERT INTO relationships (rid, title) VALUES (1, "Father")');
@@ -2061,8 +2061,8 @@ function _selectUsersSuccessCB(tx, results) {
     for (var i = 0; i < len; i++) {
       var item = results.rows.item(i);
       var inlinePerson = _getHtml('inlinePerson', item);
-      var person = '<span class="rounded"><span class="rounded-inner"><img src="' +
-                   item.image_path + '" alt="" /></span></span>';
+      var person = '<span class="rounded"><img src="' +
+                   item.image_path + '" alt="" /></span>';
       $('ul.persons-inline.in-the-village').prepend(inlinePerson);
       $('ul.persons-inline.in-the-village li[data-uid]').addClass('active');
       $('[data-role="panel"] li.village a').append(person);
@@ -2771,9 +2771,9 @@ function _getHtml(idx, dt, options) {
       output += '<li>';
       output += '<a href="#children-' + dt.cid + '" data-transition="slide">';
       output += '<span>' + dt.first_name + ':</span>';
-      output += '<span class="rounded"><span class="rounded-inner">';
+      output += '<span class="rounded">';
       output += '<img src="' + dt.image_path + '" alt="" />';
-      output += '</span></span>';
+      output += '</span>';
       output += '</a>';
       output += '<select name="assign-children-' + dt.cid + '" ' +
         'id="assign-children-' + dt.cid + '" data-cid="' + dt.cid + '">';
@@ -2796,9 +2796,9 @@ function _getHtml(idx, dt, options) {
       output += '<li class="' + classes + '" data-uid="' + dt.uid + '">';
       output += '<a href="#" data-transition="slide">';
       output += '<span>' + dt.name + ':</span>';
-      output += '<span class="rounded"><span class="rounded-inner">';
+      output += '<span class="rounded">';
       output += '<img src="' + dt.image_path + '" alt="" />';
-      output += '</span></span>';
+      output += '</span>';
       output += '</a>';
       output += '<select required="required" name="assign-profile-' +
         dt.uid + '" id="assign-profile-' + dt.uid + '" data-uid="' +
@@ -3030,17 +3030,17 @@ function _getHtml(idx, dt, options) {
       output += '<li class="check' + goalClass + '" data-gid="' + dt.gid +
         '"><a href="#" ' +
         'data-icon="check" data-transition="slide">' +
-        '<span class="rounded small"><span class="rounded-inner"><img src="' + dt.image_path +
-        '" alt="" /></span></span>' + dt.title +
+        '<span class="rounded small"><img src="' + dt.image_path +
+        '" alt="" /></span>' + dt.title +
         '</a></li>';
       break;
     case 'villageGoalItem':
       var goalClass = '';
       output += '<li class="double-icons active" data-gid="' + dt.gid + '" data-uid="' + dt.uid + '">' +
-        '<a href="#" data-transition="slide"><span class="rounded small"><span class="rounded-inner">' +
-        '<img src="' + dt.image_path + '" alt="" /></span></span>' +
-        '<span class="rounded small"><span class="rounded-inner"><img src="' + dt.user_image_path +
-        '" alt="" /></span></span>' + dt.title + '</a></li>';
+        '<a href="#" data-transition="slide"><span class="rounded small">' +
+        '<img src="' + dt.image_path + '" alt="" /></span>' +
+        '<span class="rounded small"><img src="' + dt.user_image_path +
+        '" alt="" /></span>' + dt.title + '</a></li>';
       break;
     case 'myGoals':
       if (dt.goals.length != 0) {
@@ -3060,8 +3060,8 @@ function _getHtml(idx, dt, options) {
     case 'myChildLinkInMenu':
       output += '<li><a class="is-ico" href="#children-' + dt.cid + '" ' +
         'data-transition="slide" data-direction="reverse">' + dt.first_name +
-        '<span class="rounded"><span class="rounded-inner"><img src="' + dt.image_path + '" ' +
-        'alt="" /></span></span></a></li>';
+        '<span class="rounded"><img src="' + dt.image_path + '" ' +
+        'alt="" /></span></a></li>';
       break;
     case 'pagerItem':
       if (opt.pagerName !== null) {
@@ -3075,9 +3075,9 @@ function _getHtml(idx, dt, options) {
       break;
     case 'inlinePerson':
       output += '<li data-uid="' + dt.uid + '"><a href="#">';
-      output += '<span class="rounded medium"><span class="rounded-inner">';
+      output += '<span class="rounded medium">';
       output += '<img src="' + dt.image_path + '" alt="" />';
-      output += '</span></span>';
+      output += '</span>';
       output += dt.name;
       output += '</a></li>';
       break;
