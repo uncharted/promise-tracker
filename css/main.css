@@ -278,6 +278,9 @@ span.rounded img {
 div.image-holder .rounded {
   width: 100%;
   height: 100%;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
 }
 /* main-menu */
 #main-menu {
