@@ -970,7 +970,7 @@ function events() {
                   if (!$(this).hasClass('user')) {
                     var userID = $(this).data('uid');
                     tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
-                      'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], function(err) { _errorHandler(err, 973); });
+                      'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], null, function(err) { _errorHandler(err, 973); });
                     tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
                       'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp], null, function(err) { _errorHandler(err, 975); });
                   }
