@@ -350,31 +350,22 @@ function events() {
                 $reminderPersons.append(inlinePerson);
               }
               $reminderPersons.find('li[data-uid="' + uid + '"]').addClass('user active');
-            }
-          },
-          function(err) {
-            _errorHandler(err, 337);
-          });
-        tx.executeSql('SELECT ri.uid, r.title, r.repeat, r.interval, r.time ' +
-          'FROM reminder AS r ' +
-          'LEFT JOIN reminder_index AS ri ON ri.rid = r.rid ' +
-          'WHERE ri.cid = ? AND ri.gid = ? ' +
-          'ORDER BY r.title ASC', [winData.cid, winData.gid], function(tx, results) {
-            var len = results.rows.length;
-            if (len) {
-              for (var i = 0; i < len; i++) {
-                var item = results.rows.item(i);
-                $('#reminder-persons li[data-uid="' + item.uid + '"]').addClass('active');
+              if (winData.reminder != undefined) {
+                $.each(winData.reminder,function(i,reminder){
+                  var len = reminder.uids.length;
+                  if (len) {
+                    for (var i = 0; i < len; i++) {
+                      var uid = reminder.uids[i];
+                      $('#reminder-persons li[data-uid="' + uid + '"]').addClass('active');
+                    }
+                    $('#goal-repeat').val(reminder.repeat).change().attr('rel', reminder.repeat);
+                    $('#goal-time').val(reminder.time).change().attr('rel', reminder.time);
+                    $('#goal-interval').val(reminder.interval).change().attr('rel', reminder.interval);
+                  }
+                });
               }
-              var item = results.rows.item(0);
-              $('#goal-repeat').val(item.repeat).change().attr('rel', item.repeat);
-              $('#goal-time').val(item.time).change().attr('rel', item.time);
-              $('#goal-interval').val(item.interval).change().attr('rel', item.interval);
             }
-          },
-          function(err) {
-            _errorHandler(err, 408);
-          });
+          }, function(err) { _errorHandler(err, 337); });
       });
     })
     .on('click', '#reminder-persons li', function(e) {
@@ -734,7 +725,7 @@ function events() {
         tx.executeSql('SELECT r.rid, r.repeat, ri.uid, r.time, r.interval ' +
           'FROM reminder_index AS ri ' +
           'LEFT JOIN reminder AS r ON r.rid = ri.rid ' +
-          'WHERE ri.cid = ? AND ri.gid = ?',
+          'WHERE ri.cid = ? AND ri.gid = ? AND ri.skipped = 0',
           [data.cid, data.gid], function(tx, results) {
             var len = results.rows.length;
             if (len) {
@@ -751,14 +742,35 @@ function events() {
                 }
                 data.reminder[item.rid].uids.push(item.uid);
               }
+              $(window).data(data);
+              $('#goal-settings').removeClass('is-new-goal').addClass('edit');
+              $prepareRemove.removeClass('prepare-remove');
+              $.mobile.changePage('#goal-settings', {
+                allowSamePageTransition: true,
+                transition: 'slide'
+              });
+            } else {
+              tx.executeSql('SELECT uid FROM goal_index WHERE cid = ? AND gid = ?',[data.cid, data.gid],function(tx,results) {
+                var len = results.rows.length;
+                if (len) {
+                  data.reminder[0] = {
+                    'uids' : []
+                  }
+                  for (var i = 0; i < len; i++) {
+                    var uid = results.rows.item(i).uid;
+                    data.reminder[0].uids.push(uid);
+                  }
+                  $(window).data(data);
+                  $('#goal-settings').removeClass('is-new-goal').addClass('edit');
+                  $prepareRemove.removeClass('prepare-remove');
+                  $.mobile.changePage('#goal-settings', {
+                    allowSamePageTransition: true,
+                    transition: 'slide'
+                  });
+                }
+              });
             }
-            $(window).data(data);
-            $('#goal-settings').removeClass('is-new-goal').addClass('edit');
-            $prepareRemove.removeClass('prepare-remove');
-            $.mobile.changePage('#goal-settings', {
-              allowSamePageTransition: true,
-              transition: 'slide'
-            });
+            /**/
           },
           function(err) {
             _errorHandler(err, 802);
@@ -984,31 +996,54 @@ function events() {
     })
     .on('click', '#edit-goal-settings', function(e) {
       var data = _formatGoalData();
+      $.mobile.loading('show');
       if (data.goalInterval != data.goalIntervalOld ||
           data.goalRepeat != data.goalRepeatOld ||
           data.goalTime != data.goalTimeOld) {
-        $.mobile.loading('show');
         apApp.settings.dbPromiseTracker.transaction(function(tx) {
           if (data.reminder != undefined) {
             $.each(data.reminder, function(rid, reminderItem) {
               tx.executeSql('UPDATE reminder ' +
                 'SET repeat = ?, time = ?, interval = ?, end_date = ? ' +
-                'WHERE rid = ?', [data.goalRepeat, data.goalTime, data.goalInterval, data.end_date, rid], null, function(err) { _errorHandler(err, 996); });
-              if (reminderItem.uids != undefined) {
-                $.each(reminderItem.uids, function(i, uid) {
-                  // tx.executeSql('UPDATE reminder_index ' +
-                  //   'SET repeat = ?, time = ?, interval = ? ' +
-                  //   'WHERE rid = ?', [data.goalRepeat, data.goalTime, data.goalInterval, rid],
-                  //   function(tx, results) {}, function(err) { _errorHandler(err, 1070); });
-                });
-              }
+                'WHERE rid = ?',
+                [data.goalRepeat, data.goalTime, data.goalInterval, data.end_date, rid],
+                null, function(err) { _errorHandler(err, 996); });
+              $('#reminder-persons li').each(function(idx, el) {
+                var userID = $(this).data('uid'),
+                    timestamp = parseInt(new Date().getTime() / 1000),
+                    skipped = 1;
+                if ($(this).hasClass('active')) {
+                  skipped = 0;
+                }
+                tx.executeSql('UPDATE reminder_index ' +
+                  'SET skipped = ?, updated = ? ' +
+                  'WHERE uid = ? AND cid = ? AND gid = ?',
+                  [skipped, timestamp, userID, data.cid, data.gid], null, function(err) { _errorHandler(err, 1022); });
+              });
             });
           }
-          _messagePopup('Updated');
+          _messagePopup('Reminder was updated');
           $.mobile.loading('hide');
         });
       }
-      // e.preventDefault();
+      else {
+        apApp.settings.dbPromiseTracker.transaction(function(tx) {
+          $('#reminder-persons li').each(function(idx, el) {
+            var userID = $(this).data('uid'),
+                timestamp = parseInt(new Date().getTime() / 1000),
+                skipped = 1;
+            if ($(this).hasClass('active')) {
+              skipped = 0;
+            }
+            tx.executeSql('UPDATE reminder_index ' +
+              'SET skipped = ?, updated = ? ' +
+              'WHERE uid = ? AND cid = ? AND gid = ?',
+              [skipped, timestamp, userID, data.cid, data.gid], null, function(err) { _errorHandler(err, 1022); });
+          });
+          _messagePopup('Reminder was updated');
+          $.mobile.loading('hide');
+        });
+      }
     })
     .on('click', 'button.submit-goal', function(e) {
       var $form = $(this).parents('form');
@@ -1557,7 +1592,7 @@ function _updateReminder(tx, reminder, users, goals) {
             $.each(reminder.uids, function(i,uid_origin) {
               if (users[uid_origin] != undefined) {
                 tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
-                  'VALUES (?, ?, ?, ?, ?, 1)',
+                  'VALUES (?, ?, ?, ?, ?, 0)',
                   [reminder.rid, users[uid_origin], reminder.cid, reminder.gid, apApp.settings.cron],
                   function(tx, results) {
                     if (users[uid_origin] == 1) {
@@ -1921,18 +1956,12 @@ function _dbQuery(tx) {
             window.plugin.notification.local.cancel(item.rid);
           }
           tx.executeSql('DELETE FROM reminder WHERE rid = ?', [item.rid],
-            function(tx, results) {}, function(err) {
-              _errorHandler(err, 1310);
-            });
+            function(tx, results) {}, function(err) { _errorHandler(err, 1310); });
           tx.executeSql('DELETE FROM reminder_index WHERE rid = ?', [item.rid],
-            function(tx, results) {}, function(err) {
-              _errorHandler(err, 1314);
-            });
+            function(tx, results) {}, function(err) { _errorHandler(err, 1314); });
         }
       }
-    }, function(err) {
-      _errorHandler(err, 1319);
-    });
+    }, function(err) { _errorHandler(err, 1319); });
   tx.executeSql('SELECT DISTINCT(c.cid), t.title, t.body, a.age, topic.topic ' +
     'FROM childs AS c ' +
     'INNER JOIN age AS a ON a.age = c.age ' +
@@ -1964,9 +1993,7 @@ function _dbQuery(tx) {
           }
         }
       }
-    }, function(err) {
-      _errorHandler(err, 1080);
-    });
+    }, function(err) { _errorHandler(err, 1080); });
 
   tx.executeSql('SELECT u.uid, u.image_path, u.name, u.last_name, u.email ' +
     'FROM users AS u', [], _selectUsersSuccessCB, function(err) {
@@ -3670,7 +3697,7 @@ function _uploadRemindersofGoals(){
   // apApp.settings.uploadQueryExclude.reminderofChild = false;
   var time = apApp.settings.cron;
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
-    tx.executeSql('SELECT ri.gid, r.*, g.gid_origin, c.cid_origin, u.uid_origin FROM reminder_index AS ri ' +
+    tx.executeSql('SELECT ri.gid, r.*, g.gid_origin, c.cid_origin, ri.skipped, u.uid_origin FROM reminder_index AS ri ' +
       'LEFT JOIN reminder AS r ON r.rid = ri.rid ' +
       'LEFT JOIN goals AS g ON g.gid = ri.gid ' +
       'LEFT JOIN childs AS c ON c.cid = ri.cid ' +
@@ -3687,7 +3714,7 @@ function _selectUploadRemindersofGoals(tx, results){
   var import_reminder = [];
   var items = {
     'reminders': [],
-    'import_reminder' : [],
+    'import_reminder' : []
   };
   if (len) {
     for (var i = 0; i < len; i++) {
@@ -3705,11 +3732,17 @@ function _selectUploadRemindersofGoals(tx, results){
           'cid_origin': item.cid_origin,
           'updated': item.updated,
           'uids': [],
+          'uids_skipped': []
         };
         if (item.rid_origin == 0) import_reminder.push(item.rid);
       }
 
-      reminders[item.rid].uids.push(item.uid_origin);
+      if (item.skipped == 0) {
+        reminders[item.rid].uids.push(item.uid_origin);
+      }
+      else {
+        reminders[item.rid].uids_skipped.push(item.uid_origin);
+      }
     }
     items.reminders = reminders;
     items.import_reminder = import_reminder;
