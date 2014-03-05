@@ -263,8 +263,8 @@ function events() {
             .attr('href', '#search-goals-' + cid);
           $('#add-vilage-goals')
             .attr('href', '#children-' + cid);
-          $('#my-goals li[data-icon="plus"] a')
-            .attr('href', '#children-' + cid);
+          // $('#my-goals li[data-icon="plus"] a')
+          //   .attr('href', '#children-' + cid);
         }
       }
       setTimeout(function() {

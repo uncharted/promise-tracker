@@ -585,6 +585,10 @@ div.copyright img {
 .main .ui-listview .ui-icon-plus {
   background-position: -94px -43px;
 }
+#my-childrens .ui-icon-plus,
+#my-goals .ui-icon-plus {
+  display: none;
+}
 .main .ui-listview li[data-icon="plus"] a {
   font-weight: 700;
   font-size: 13px;
@@ -1494,6 +1498,9 @@ body .main .form .right-side div.ui-input-text:after {
   padding-left: 10px;
   padding-right: 25px;
   color: #b5b5b5 !important;
+}
+#my-childrens .ui-select .ui-btn-inner {
+  color: #002d40 !important;
 }
 .main .ui-listview.my-childrens .ui-select.not-empty .ui-btn-inner {
   color: #002d40 !important;
