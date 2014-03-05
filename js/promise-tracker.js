@@ -650,6 +650,7 @@ function events() {
         e.preventDefault();
       } else {
         var $popup = $(this).parents('div[data-role="popup"]');
+        $('#add-to-village-popup .ui-input-text').val('').change();
         $popup.popup('close');
         _sendInvitation();
       }
