@@ -844,7 +844,7 @@ function events() {
                       fx: 'scrollHorz',
                       slides: '> .item',
                       speed: 500,
-                      // swipe: true,
+                      swipe: true,
                       timeout: 0,
                       'autoHeight': 'calc',
                       pager: '> ul.list-pagerer',
@@ -852,14 +852,14 @@ function events() {
                       pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
                       'log': false
                     });
-                    $('div[id*="add-topic-"] div.featured-goals').swipeleft(function(e){
-                      $('div[id*="add-topic-"] div.featured-goals').cycle('next');
-                      e.preventDefault();
-                    });
-                    $('div[id*="add-topic-"] div.featured-goals').swiperight(function(e){
-                      $('div[id*="add-topic-"] div.featured-goals').cycle('prev');
-                      e.preventDefault();
-                    });
+                    // $('div[id*="add-topic-"] div.featured-goals').swipeleft(function(e){
+                    //   $('div[id*="add-topic-"] div.featured-goals').cycle('next');
+                    //   e.preventDefault();
+                    // });
+                    // $('div[id*="add-topic-"] div.featured-goals').swiperight(function(e){
+                    //   $('div[id*="add-topic-"] div.featured-goals').cycle('prev');
+                    //   e.preventDefault();
+                    // });
                     childsCycleInit = true;
                   }
                   $.mobile.loading('hide');
