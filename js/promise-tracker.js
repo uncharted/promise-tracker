@@ -1145,6 +1145,11 @@ function events() {
         _refreshIscroll();
         e.preventDefault();
       }
+    })
+    .on('click', '#invite-children a', function(e) {
+      var li = $(this).parent('li');
+      li.toggleClass('active');
+      e.preventDefault();
     });
 
   $('a.uncharted-digital-link').on('click', function(e) {
@@ -2005,7 +2010,7 @@ function _dbQuery(tx) {
       _errorHandler(err, 1083);
     });
 
-  tx.executeSql('SELECT g.gid, c.image_path, c.cid, c.first_name, c.age, c.uid, gi.uid AS guid, ' +
+  tx.executeSql('SELECT g.gid, c.image_path, c.cid, c.cid_origin, c.first_name, c.age, c.uid, gi.uid AS guid, ' +
     'gi.completed, gi.deleted, g.title ' +
     'FROM childs AS c ' +
     'LEFT JOIN goal_index AS gi ON c.cid = gi.cid ' +
@@ -2166,7 +2171,8 @@ function _selectChildSuccessCB(tx, results) {
         var article = _getHtml('article', child, options),
           childPage = _getHtml('childPage', child),
           addGoalPage = _getHtml('addGoalPage', child),
-          myChildLinkInMenu = _getHtml('myChildLinkInMenu', child);
+          myChildLinkInMenu = _getHtml('myChildLinkInMenu', child),
+          myChildLinkInPopup = _getHtml('myChildLinkInPopup', child);
         if (!globalCidIsGeted) {
           globalCid = cid;
           globalCidIsGeted = true;
@@ -2179,6 +2185,7 @@ function _selectChildSuccessCB(tx, results) {
         $(article).prependTo('#list-children');
         // add child page after home page
         $('#home').after(childPage).after(addGoalPage);
+        $(myChildLinkInPopup).prependTo('#invite-children');
         // add my child in navigation menu
         $('nav[data-role="panel"] li.search-holder')
           .after(myChildLinkInMenu);
@@ -2337,6 +2344,7 @@ function _reorderChildrenResultChildPage(results){
       if (children[cid] == undefined) {
         children[cid] = {
           'cid': cid,
+          'cid_origin': item.cid_origin,
           'age': item.age,
           'first_name': item.first_name,
           'image_path': item.image_path,
@@ -3148,6 +3156,14 @@ function _getHtml(idx, dt, options) {
         '<span class="rounded"><img src="' + dt.image_path + '" ' +
         'alt="" /></span></a></li>';
       break;
+    case 'myChildLinkInPopup':
+      output += '<li data-cid="' + dt.cid + '" data-cid-origin="' + dt.cid_origin + '"><a href="#">';
+      output += '<span class="rounded medium">';
+      output += '<img src="' + dt.image_path + '" alt="" />';
+      output += '</span>';
+      output += dt.first_name;
+      output += '</a></li>';
+      break;
     case 'pagerItem':
       if (opt.pagerName !== null) {
         if (dt.topicID != undefined) {
@@ -3793,8 +3809,15 @@ function _sendInvitation() {
     'lname': $('#add-to-village-lastname').val(),
     'email': $('#add-to-village-email').val(),
     'message': $('#add-to-village-message').val(),
+    'cids' : [],
     'uid_origin': apApp.settings.userProfile.uid_origin
   }
+  $('#invite-children li').each(function(){
+    var cid_origin = $(this).attr('data-cid-origin');
+    if ($(this).hasClass('active')) {
+      data.cids.push(cid_origin);
+    }
+  });
   $.ajax({
     type: 'post',
     url: apApp.settings.restUrl + "import/invite",
@@ -3980,6 +4003,7 @@ function _importUsersToApp(users, key) {
   var ts = parseInt(new Date().getTime() / 1000);
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     $.each(users, function(uid_origin, user) {
+      if (user.uid_origin != undefined) {
       tx.executeSql('INSERT INTO users (image_path, uid_origin, name, last_name, ' +
         'email, updated, created, status) ' +
         'VALUES (?, ?, ?, ?, ?, ?, ?, 1)', ['', user.uid_origin, user.name, user.last_name, user.email, ts, ts],
@@ -4005,6 +4029,16 @@ function _importUsersToApp(users, key) {
             }
           }
         });
+       } else {
+        j++;
+        if (j == size_users) {
+          if (size_children > 0) {
+              _importChildrenToApp(tx,children,size_children,userInvite,apApp.settings.goalsInvite,key);
+          } else {
+            _queryExcludeInvite(key);
+          }
+        }
+       }
     });
   });
 }

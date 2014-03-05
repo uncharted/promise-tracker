@@ -1305,12 +1305,19 @@ body .main .form .right-side div.ui-input-text:after {
   position: relative;
   top: 10px;
 }
+#invite-children.invite-inline,
+#invite-children.invite-inline li,
 .main .persons-inline,
 .main .persons-inline li {
   margin: 0;
   padding: 0;
   list-style: none outside none;
 }
+#invite-children.invite-inline{
+  text-align: center;
+  padding: 10px 0;
+}
+#invite-children.invite-inline li,
 .main .persons-inline li {
   vertical-align: top;
   display: inline-block;
@@ -1319,6 +1326,7 @@ body .main .form .right-side div.ui-input-text:after {
   text-transform: uppercase;
   opacity: 1;
 }
+#invite-children.invite-inline li a,
 .main .persons-inline li a {
   clear: left;
   float: left;
@@ -1328,6 +1336,12 @@ body .main .form .right-side div.ui-input-text:after {
   font-weight: 700;
   color: #0d6392;
 }
+#invite-children.invite-inline li a{
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+#invite-children.invite-inline li:last-child,
 .main .persons-inline li:last-child {
   margin-right: 0;
 }
@@ -1379,6 +1393,7 @@ body .main .form .right-side div.ui-input-text:after {
 .main .persons-inline.in-the-village {
   text-align: center;
 }
+#invite-children.invite-inline li,
 .main .persons-inline.in-the-village li {
   opacity: 0.2;
   -webkit-transition: opacity 225ms ease-out;
@@ -1386,6 +1401,7 @@ body .main .form .right-side div.ui-input-text:after {
   -o-transition: opacity 225ms ease-out;
   transition: opacity 225ms ease-out;
 }
+#invite-children.invite-inline li.active,
 .main .persons-inline.in-the-village li.add-new,
 .main .persons-inline.in-the-village li.active {
   opacity: 1;
