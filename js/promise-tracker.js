@@ -223,7 +223,6 @@ function html() {
 }
 
 function events() {
-  var childsCycleInit = false;
   if (window.plugin != undefined) {
     window.plugin.notification.local.onadd = function(id, state, json) {
       _messagePopup('Reminder id:' + id + ' has been added successfully.', false);
@@ -650,7 +649,6 @@ function events() {
         e.preventDefault();
       } else {
         var $popup = $(this).parents('div[data-role="popup"]');
-        $('#add-to-village-popup .ui-input-text').val('').change();
         $popup.popup('close');
         _sendInvitation();
       }
@@ -839,29 +837,22 @@ function events() {
                   // add pager in child page
                   $(pager).appendTo('div[data-role="page"][id*="' +
                     options.pagerName + topicID + '-"] .child.item');
-                  if (childsCycleInit === false) {
-                    $('div[id*="add-topic-"] div.featured-goals').cycle({
-                      fx: 'scrollHorz',
-                      slides: '> .item',
-                      speed: 500,
-                      swipe: true,
-                      timeout: 0,
-                      'autoHeight': 'calc',
-                      pager: '> ul.list-pagerer',
-                      pagerActiveClass: 'active',
-                      pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
-                      'log': false
-                    });
-                    // $('div[id*="add-topic-"] div.featured-goals').swipeleft(function(e){
-                    //   $('div[id*="add-topic-"] div.featured-goals').cycle('next');
-                    //   e.preventDefault();
-                    // });
-                    // $('div[id*="add-topic-"] div.featured-goals').swiperight(function(e){
-                    //   $('div[id*="add-topic-"] div.featured-goals').cycle('prev');
-                    //   e.preventDefault();
-                    // });
-                    childsCycleInit = true;
-                  }
+                  $('div[id*="add-topic-"] div.featured-goals').each(function() {
+                    if (!$('li:first', this).hasClass('cycle-slide')) {
+                      $(this).cycle({
+                        fx: 'scrollHorz',
+                        slides: '> .item',
+                        speed: 500,
+                        swipe: true,
+                        timeout: 0,
+                        'autoHeight': 'calc',
+                        pager: '> ul.list-pagerer',
+                        pagerActiveClass: 'active',
+                        pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
+                        'log': false
+                      });
+                    }
+                  });
                   $.mobile.loading('hide');
                   $.mobile.changePage('#' + options.pagerName + topicID +
                     '-cid-' + globalCid, {
@@ -3811,13 +3802,15 @@ function _sendInvitation() {
     'message': $('#add-to-village-message').val(),
     'cids' : [],
     'uid_origin': apApp.settings.userProfile.uid_origin
-  }
+  };
   $('#invite-children li').each(function(){
     var cid_origin = $(this).attr('data-cid-origin');
     if ($(this).hasClass('active')) {
       data.cids.push(cid_origin);
     }
   });
+  $('#add-to-village-popup .ui-input-text').val('').change();
+  $('#invite-children li').removeClass('active');
   $.ajax({
     type: 'post',
     url: apApp.settings.restUrl + "import/invite",
