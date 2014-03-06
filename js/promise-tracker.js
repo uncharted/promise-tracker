@@ -842,6 +842,7 @@ function events() {
                       $(this).cycle({
                         fx: 'scrollHorz',
                         slides: '> .item',
+                        allowWrap: false,
                         speed: 500,
                         swipe: true,
                         timeout: 0,
@@ -1142,8 +1143,7 @@ function events() {
       li.toggleClass('active');
       e.preventDefault();
     })
-    .on('change focusout', '#add-child input[type="date"]', function(e) {
-      console.log(e);
+    .on('change focusout', 'input[type="date"].create-date', function(e) {
       var inputName = $(this).attr('name');
       $('label[for="' + inputName + '"]').hide().css('visibility', 'hidden');
     });
