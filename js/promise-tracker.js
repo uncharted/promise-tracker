@@ -1141,6 +1141,11 @@ function events() {
       var li = $(this).parent('li');
       li.toggleClass('active');
       e.preventDefault();
+    })
+    .on('change focusout', '#add-child input[type="date"]', function(e) {
+      console.log(e);
+      var inputName = $(this).attr('name');
+      $('label[for="' + inputName + '"]').hide().css('visibility', 'hidden');
     });
 
   $('a.uncharted-digital-link').on('click', function(e) {
