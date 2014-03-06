@@ -207,7 +207,10 @@ body .ui-mobile .ui-page {
 }
 .ui-header .ui-title {
   background: url(../images/logo.png) no-repeat;
-  background-size: cover;
+  -webkit-background-size: cover !important;
+  -moz-background-size: cover !important;
+  -o-background-size: cover !important;
+  background-size: cover !important;
   text-indent: -9999px;
   line-height: 0;
   width: 148px;
@@ -285,7 +288,10 @@ div.image-holder .rounded {
 /* main-menu */
 #main-menu {
   background: url(../images/bg-noise.jpg) no-repeat center center fixed;
-  background-size: cover;
+  -webkit-background-size: cover !important;
+  -moz-background-size: cover !important;
+  -o-background-size: cover !important;
+  background-size: cover !important;
   -webkit-box-shadow: inset 20px 0px 20px -20px rgba(0,0,0,0.5);
   -moz-box-shadow: inset 20px 0px 20px -20px rgba(0,0,0,0.5);
   box-shadow: inset 20px 0px 20px -20px rgba(0,0,0,0.5);
@@ -1615,6 +1621,9 @@ ul.ui-listview li.prepare-remove .ui-icon {
 /* page */
 div.page {
   background: url(../images/bg-noise.jpg) no-repeat center center fixed !important;
+  -webkit-background-size: cover !important;
+  -moz-background-size: cover !important;
+  -o-background-size: cover !important;
   background-size: cover !important;
 }
 div.page .main {
