@@ -408,10 +408,10 @@ function events() {
       $pager.find('li.active').removeClass('active');
       $pager.find('a[href*="' + pageId + '"]').parent().addClass('active');
       if ($.fn.inFieldLabels) {
-        $('label.placeholder').each(function(index, el) {
-          var labelName = $(this).attr('for');
-          $("#" + labelName).before(this);
-        });
+        // $('label.placeholder').each(function(index, el) {
+        //   var labelName = $(this).attr('for');
+        //   $("#" + labelName).before(this);
+        // });
         $('label.placeholder').inFieldLabels();
       }
     })
