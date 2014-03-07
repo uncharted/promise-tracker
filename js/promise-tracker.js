@@ -324,7 +324,9 @@ function events() {
       }
     })
     .on('pagebeforeshow', '#goal-settings', function(e, data) {
-      var winData = $(window).data();
+      var winData = $(window).data(),
+          $reminderPersons = $('#reminder-persons'),
+          uid = apApp.settings.profileUID;
       $('#goal-settings-child-image').attr('src', winData.image_path);
       $('#goal-settings-first-name').text(winData.first_name);
       $('#goal-settings-title').text(winData.title);
@@ -339,8 +341,6 @@ function events() {
           'ORDER BY ci.uid ASC', [winData.cid], function(tx, results) {
             var len = results.rows.length;
             if (len) {
-              var $reminderPersons = $('#reminder-persons'),
-                  uid = apApp.settings.profileUID;
               $reminderPersons.find('li').remove();
               for (var i = 0; i < len; i++) {
                 var item = results.rows.item(i);
@@ -349,15 +349,10 @@ function events() {
                   item.image_path + '" alt="" /></span>';
                 $reminderPersons.append(inlinePerson);
               }
-              $reminderPersons.find('li[data-uid="' + uid + '"]').addClass('user active');
               if (winData.reminder != undefined) {
-                $.each(winData.reminder,function(i,reminder){
+                $.each(winData.reminder, function(i, reminder) {
                   var len = reminder.uids.length;
                   if (len) {
-                    for (var i = 0; i < len; i++) {
-                      var uid = reminder.uids[i];
-                      $('#reminder-persons li[data-uid="' + uid + '"]').addClass('active');
-                    }
                     $('#goal-repeat').val(reminder.repeat).change().attr('rel', reminder.repeat);
                     $('#goal-time').val(reminder.time).change().attr('rel', reminder.time);
                     $('#goal-interval').val(reminder.interval).change().attr('rel', reminder.interval);
@@ -365,13 +360,23 @@ function events() {
                 });
               }
             }
-          }, function(err) { _errorHandler(err, 337); });
+            tx.executeSql('SELECT uid FROM goal_index WHERE cid = ? AND gid = ? AND deleted = 0',
+              [winData.cid, winData.gid], function(tx, results) {
+                $reminderPersons.find('li').removeClass('active');
+                $reminderPersons.find('li[data-uid="' + uid + '"]').addClass('user');
+                var len = results.rows.length;
+                if (len) {
+                  for (var i = 0; i < len; i++) {
+                    var item = results.rows.item(i);
+                    $('#reminder-persons li[data-uid="' + item.uid + '"]').addClass('active');
+                  }
+                }
+              }, function(err) { _errorHandler(err, 368); });
+          }, function(err) { _errorHandler(err, 367); });
       });
     })
     .on('click', '#reminder-persons li', function(e) {
-      // if (!$(this).hasClass('user')) {
       $(this).toggleClass('active');
-      // }
       e.preventDefault();
     })
     .on('change', '#goal-repeat', function(e) {
@@ -895,9 +900,12 @@ function events() {
       _refreshIscroll();
       e.preventDefault();
     })
-    .on('click', '#submit-goal-settings', function(e) {
+    .on('click', '#submit-goal-settings, #submit-goal-settings-no-reminder', function(e) {
       $.mobile.loading('show');
       var data = _formatGoalData();
+      if ($(this).attr('id') == 'submit-goal-settings-no-reminder') {
+        data.reminderDisabled = true;
+      }
       if ($('#goal-settings').hasClass('is-new-goal')) {
         // insert new goal
         apApp.settings.dbPromiseTracker.transaction(function(tx) {
@@ -912,11 +920,12 @@ function events() {
                     'VALUES (?, "goal", ?, 0)', [data.gid, data.topic],
                     function(tx, results) {
                       if (data.reminderDisabled === true) {
-                        tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
-                          'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, apApp.settings.profileUID, data.timestamp],
-                          function(tx, results) {
-                            _addNewGoalSuccessCB(data);
-                          }, function(err) { _errorHandler(err, 917); });
+                        $('#reminder-persons li.active').each(function(idx, el) {
+                          var user_id = $(this).data('uid');
+                          tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
+                            'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, user_id, data.timestamp], null, function(err) { _errorHandler(err, 917); });
+                        });
+                        _addNewGoalSuccessCB(data);
                       }
                       else {
                         tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date, updated) ' +
@@ -924,21 +933,12 @@ function events() {
                           [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, data.start_date, data.end_date, data.timestamp],
                           function(tx, results) {
                             data.rid = results.insertId;
-                            var userID = $('#reminder-persons li.user').data('uid');
-                            tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
-                              'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], null, function(err) { _errorHandler(err, 927); });
-                            if ($('#reminder-persons li.active.user').get(0)) {
-                              tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
-                                'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp], null, function(err) { _errorHandler(err, 930); });
-                            }
                             $('#reminder-persons li.active').each(function(idx, el) {
-                              if (!$(this).hasClass('user')) {
-                                var userID = $(this).data('uid');
-                                tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
-                                  'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], null, function(err) { _errorHandler(err, 936); });
-                                tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
-                                  'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp], null, function(err) { _errorHandler(err, 938); });
-                              }
+                              var userID = $(this).data('uid');
+                              tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
+                                'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], null, function(err) { _errorHandler(err, 936); });
+                              tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
+                                'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp], null, function(err) { _errorHandler(err, 938); });
                             });
                             _addNewGoalSuccessCB(data);
                           }, function(err) { _errorHandler(err, 942); });
@@ -950,32 +950,26 @@ function events() {
       } else {
         apApp.settings.dbPromiseTracker.transaction(function(tx) {
           if (data.reminderDisabled === true) {
-            tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
-              'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, apApp.settings.profileUID, data.timestamp],
-              function(tx, results) {
-                _addNewGoal(data);
-              }, function(err) { _errorHandler(err, 955); });
+            $('#reminder-persons li.active').each(function(idx, el) {
+              var user_id = $(this).data('uid');
+              tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
+                'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, user_id, data.timestamp],
+                function(tx, results) {
+                }, function(err) { _errorHandler(err, 955); });
+            });
+            _addNewGoal(data);
           }
           else {
             tx.executeSql('INSERT INTO reminder (rid_origin, title, message, repeat, time, interval, start_date, end_date, updated) ' +
               'VALUES (0, ?, ?, ?, ?, ?, ?, ?, ?)', [data.first_name, data.title, data.goalRepeat, data.goalTime, data.goalInterval, data.start_date, data.end_date, data.timestamp],
               function(tx, results) {
                 data.rid = results.insertId;
-                var userID = $('#reminder-persons li.user').data('uid');
-                tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
-                  'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], null, function(err) { _errorHandler(err, 964); });
-                if ($('#reminder-persons li.active.user').get(0)) {
-                  tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
-                    'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp], null, function(err) { _errorHandler(err, 967); });
-                }
                 $('#reminder-persons li.active').each(function(idx, el) {
-                  if (!$(this).hasClass('user')) {
-                    var userID = $(this).data('uid');
-                    tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
-                      'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], null, function(err) { _errorHandler(err, 973); });
-                    tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
-                      'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp], null, function(err) { _errorHandler(err, 975); });
-                  }
+                  var userID = $(this).data('uid');
+                  tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
+                    'VALUES (?, ?, ?, 0, ?, 0)', [data.gid, data.cid, userID, data.timestamp], null, function(err) { _errorHandler(err, 973); });
+                  tx.executeSql('INSERT INTO reminder_index (rid, uid, cid, gid, updated, skipped) ' +
+                    'VALUES (?, ?, ?, ?, ?, 0)', [data.rid, userID, data.cid, data.gid, data.timestamp], null, function(err) { _errorHandler(err, 975); });
                 });
                 _addNewGoal(data);
               }, function(err) { _errorHandler(err, 979); });
@@ -987,10 +981,10 @@ function events() {
     .on('click', '#edit-goal-settings', function(e) {
       var data = _formatGoalData();
       $.mobile.loading('show');
-      if (data.goalInterval != data.goalIntervalOld ||
-          data.goalRepeat != data.goalRepeatOld ||
-          data.goalTime != data.goalTimeOld) {
-        apApp.settings.dbPromiseTracker.transaction(function(tx) {
+      apApp.settings.dbPromiseTracker.transaction(function(tx) {
+        if (data.goalInterval != data.goalIntervalOld ||
+                data.goalRepeat != data.goalRepeatOld ||
+                    data.goalTime != data.goalTimeOld) {
           if (data.reminder != undefined) {
             $.each(data.reminder, function(rid, reminderItem) {
               tx.executeSql('UPDATE reminder ' +
@@ -998,42 +992,44 @@ function events() {
                 'WHERE rid = ?',
                 [data.goalRepeat, data.goalTime, data.goalInterval, data.end_date, rid],
                 null, function(err) { _errorHandler(err, 996); });
-              $('#reminder-persons li').each(function(idx, el) {
-                var userID = $(this).data('uid'),
-                    timestamp = parseInt(new Date().getTime() / 1000),
-                    skipped = 1;
-                if ($(this).hasClass('active')) {
-                  skipped = 0;
-                }
-                tx.executeSql('UPDATE reminder_index ' +
-                  'SET skipped = ?, updated = ? ' +
-                  'WHERE uid = ? AND cid = ? AND gid = ?',
-                  [skipped, timestamp, userID, data.cid, data.gid], null, function(err) { _errorHandler(err, 1022); });
-              });
             });
+            _messagePopup('Reminder was updated');
           }
-          _messagePopup('Reminder was updated');
-          $.mobile.loading('hide');
-        });
-      }
-      else {
-        apApp.settings.dbPromiseTracker.transaction(function(tx) {
-          $('#reminder-persons li').each(function(idx, el) {
-            var userID = $(this).data('uid'),
-                timestamp = parseInt(new Date().getTime() / 1000),
-                skipped = 1;
-            if ($(this).hasClass('active')) {
-              skipped = 0;
+
+        }
+        tx.executeSql('SELECT uid FROM goal_index ' +
+          'WHERE cid = ? AND gid = ? AND deleted = 0',
+          [data.cid, data.gid], function(tx, results) {
+            var len = results.rows.length,
+                uids = [];
+            if (len) {
+              for (var i = 0; i < len; i++) {
+                var item = results.rows.item(i);
+                uids[item.uid] = item.uid;
+              }
             }
-            tx.executeSql('UPDATE reminder_index ' +
-              'SET skipped = ?, updated = ? ' +
-              'WHERE uid = ? AND cid = ? AND gid = ?',
-              [skipped, timestamp, userID, data.cid, data.gid], null, function(err) { _errorHandler(err, 1022); });
-          });
-          _messagePopup('Reminder was updated');
-          $.mobile.loading('hide');
-        });
-      }
+            $('#reminder-persons li').each(function(idx, el) {
+              var userID = $(this).data('uid'),
+                  timestamp = parseInt(new Date().getTime() / 1000),
+                  deleted = 1;
+              if ($(this).hasClass('active')) {
+                deleted = 0;
+              }
+              if ($.inArray( userID, uids )) {
+                tx.executeSql('UPDATE goal_index ' +
+                  'SET updated = ? AND deleted = ? ' +
+                  'WHERE uid = ? AND cid = ? AND gid = ?',
+                  [timestamp, deleted, userID, data.cid, data.gid], null, function(err) { _errorHandler(err, 1022); });
+              }
+              else {
+                tx.executeSql('INSERT INTO goal_index (gid, cid, uid, completed, updated, deleted) ' +
+                  'VALUES (?, ?, ?, 0, ?, 0)',
+                  [data.gid, data.cid, userID, timestamp], null, function(err) { _errorHandler(err, 1023); });
+              }
+            });
+          }, function(err) { _errorHandler(err, 1012); });
+        $.mobile.loading('hide');
+      });
     })
     .on('click', 'button.submit-goal', function(e) {
       var $form = $(this).parents('form');
@@ -2611,12 +2607,7 @@ function _formatGoalData() {
   data.start_date = parseInt(data.start_date.getTime() / 1000),
   data.end_date = parseInt(data.end_date.getTime() / 1000);
   data.reminder_date = parseInt(data.reminder_date.getTime() / 1000);
-  if ($('#reminder-persons').find('li.active').length > 0) {
-    data.reminderDisabled = false;
-  }
-  else {
-    data.reminderDisabled = true;
-  }
+  data.reminderDisabled = false;
   return data;
 }
 
