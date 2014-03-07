@@ -106,7 +106,8 @@ function html() {
       _messagePopup('Password is required.', true);
     } else {
       if ($(this).attr('data-disabled') == 'false') {
-        _createUserProfile();
+        _checkUserEmail();
+        //_createUserProfile();
         $(this).attr('data-disabled', 'true');
       }
     }
@@ -4098,6 +4099,21 @@ function _queryExcludeInvite(key) {
       _queryExclude('_dbCronHandler');
     }
   }, 1000 * 4);
+}
+
+function _checkUserEmail() {
+  $.mobile.loading('show');
+  var email = $('#create-profile-email').val();
+  $.getJSON(apApp.settings.restUrl + "check-email?jsoncallback=?&email=" + email,
+    function(response) {
+      if (response.user == 0) {
+        _createUserProfile();
+      } else {
+        _messagePopup('This email is already in use',true);
+        $('#submit-create-profile').attr('data-disabled','false');
+        $.mobile.loading('hide');
+      }
+    });
 }
 
 function _createUserProfile() {
