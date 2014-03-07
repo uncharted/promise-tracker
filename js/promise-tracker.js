@@ -3399,7 +3399,6 @@ function _succsesUserUpload(user) {
 function _uploadUserChilds(user) {
   var time = apApp.settings.cron;
   if (apApp.settings.registation) time = time - 1;
-  _messagePopup('Cron time '+time);
   apApp.settings.uploadQueryExclude.child = false;
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('SELECT c.*, ci.relationship, ur.uid_origin AS ruid_origin, r.title, u.uid_origin FROM childs AS c ' +
