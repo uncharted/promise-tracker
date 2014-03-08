@@ -10,7 +10,6 @@ if (apApp.settings.mode == 'dev') {
 else {
   // apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
    apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
-   apApp.settings.serverUrl = 'http://demo.webcodingstudio.com/ap/';
 }
 apApp.settings.cron = '';
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
