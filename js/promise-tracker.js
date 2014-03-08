@@ -59,7 +59,7 @@ function checkConnection() {
 // Connect database
 function db() {
   $.mobile.loading('show');
-  if (window.requestFileSystem !== undefined) {
+  if (apApp.settings.mode != 'dev') {
     window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFileSystemSuccess, _onFail);
   }
   apApp.settings.dbPromiseTracker = window.openDatabase("Database", "1.0", "PromiseTracker", 200000);
@@ -3980,6 +3980,7 @@ function _downloadChildPhoto(child) {
 
 function onFileSystemSuccess(fileSystem) {
   apApp.settings.FullPath = fileSystem.root.fullPath;
+  _messagePopup('onFileSystemSuccess',false);
 }
 
 function _onFail(evt) {
