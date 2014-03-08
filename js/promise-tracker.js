@@ -3943,8 +3943,6 @@ function _downloadUserPhoto(user) {
     var imagePath = apApp.settings.FullPath + '/' + user.photo; //full file path
     var url = encodeURI(user.photo_url);
     var ft = new FileTransfer();
-    _messagePopup(imagePath, false);
-    _messagePopup(url, false);
     ft.download(url, imagePath, function(file) {
       if (user.reupload != 1) {
         _messagePopup('Downloading User photo successfully', false);
@@ -3963,8 +3961,6 @@ function _downloadChildPhoto(child) {
     var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
     var url = encodeURI(child.photo_url);
     var ft = new FileTransfer();
-    _messagePopup(imagePath, false);
-    _messagePopup(url, false);
     ft.download(url, imagePath, function(file) {
       if (child.reupload != 1) {
         _messagePopup('Downloading Child photo successfully', false);
@@ -3980,7 +3976,6 @@ function _downloadChildPhoto(child) {
 
 function onFileSystemSuccess(fileSystem) {
   apApp.settings.FullPath = fileSystem.root.fullPath;
-  _messagePopup(apApp.settings.FullPath,false);
 }
 
 function _onFail(evt) {
