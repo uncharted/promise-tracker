@@ -10,6 +10,7 @@ if (apApp.settings.mode == 'dev') {
 else {
   // apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
    apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
+   apApp.settings.serverUrl = 'http://demo.webcodingstudio.com/ap/';
 }
 apApp.settings.cron = '';
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
@@ -3943,6 +3944,8 @@ function _downloadUserPhoto(user) {
     var imagePath = apApp.settings.FullPath + '/' + user.photo; //full file path
     var url = encodeURI(user.photo_url);
     var ft = new FileTransfer();
+    _messagePopup(imagePath, false);
+    _messagePopup(url, false);
     ft.download(url, imagePath, function(file) {
       if (user.reupload != 1) {
         _messagePopup('Downloading User photo successfully', false);
@@ -3961,6 +3964,8 @@ function _downloadChildPhoto(child) {
     var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
     var url = encodeURI(child.photo_url);
     var ft = new FileTransfer();
+    _messagePopup(imagePath, false);
+    _messagePopup(url, false);
     ft.download(url, imagePath, function(file) {
       if (child.reupload != 1) {
         _messagePopup('Downloading Child photo successfully', false);
