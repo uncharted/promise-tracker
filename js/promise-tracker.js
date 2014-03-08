@@ -3980,7 +3980,7 @@ function _downloadChildPhoto(child) {
 
 function onFileSystemSuccess(fileSystem) {
   apApp.settings.FullPath = fileSystem.root.fullPath;
-  _messagePopup('onFileSystemSuccess',false);
+  _messagePopup(apApp.settings.FullPath,false);
 }
 
 function _onFail(evt) {
