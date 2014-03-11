@@ -155,6 +155,12 @@ label.placeholder {
   margin: 0 .4em !important;
   z-index: 1;
 }
+label.placeholder + input,
+label.placeholder + textarea,
+label.placeholder + select {
+  position: relative;
+  z-index: 2;
+}
 label.placeholder.ui-select {
   top: .4em !important
 }
