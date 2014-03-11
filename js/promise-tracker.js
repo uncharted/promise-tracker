@@ -683,10 +683,13 @@ function events() {
       e.preventDefault();
     })
     .on('click', 'h1.logo', function(e) { // set logo as link to home page
-      $.mobile.changePage('#home', {
-        transition: "slide",
-        reverse: true
-      });
+      if (!$('div[id*="registration-"].ui-page-active').get(0) &&
+          !$('#sign-in.ui-page-active').get(0)) {
+        $.mobile.changePage('#home', {
+          transition: "slide",
+          reverse: true
+        });
+      }
       e.preventDefault();
     })
     .on('click', 'ul.ui-listview li span.delete', function() {
