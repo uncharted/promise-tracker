@@ -1506,7 +1506,7 @@ function _updateChild(child, users, goals) {
       'updated = ?, created = ?, status = ? WHERE cid = ? ', [child.first_name, child.last_name, child.birth_date, child.age, child.updated, child.created, child.status, child.cid],
       function(tx, results) {
         if (child.photo != undefined) {
-          var photo = apApp.settings.FullPath + '/' + child.photo;
+          var photo = apApp.settings.FullPath + child.photo;
           if (photo != child.image_path) _downloadChildPhoto(child);
         }
         if (child.reminders != undefined) {
@@ -1656,7 +1656,7 @@ function _addUsers(users, key){
             continue;
           }
           if (users[item.uid_origin].photo != undefined) {
-           var photo = apApp.settings.FullPath + '/' + users[item.uid_origin].photo;
+           var photo = apApp.settings.FullPath + users[item.uid_origin].photo;
            if (photo != item.image_path) update_users.push(users[item.uid_origin]);
           }
          }
@@ -1683,7 +1683,7 @@ function _updateUsers(tx,users,key){
   $.each(users, function(i, user) {
     tx.executeSql('UPDATE users SET name = ? WHERE uid_origin = ?', [user.name, user.uid_origin]);
     if (user.photo != undefined) {
-     var photo = apApp.settings.FullPath + '/' + user.photo;
+     var photo = apApp.settings.FullPath + user.photo;
      if (photo != user.image_path) _downloadUserPhoto(user);
     }
     i++;
@@ -3943,15 +3943,16 @@ function _getGoalsIds(response, key) {
 
 function _downloadUserPhoto(user) {
   if (apApp.settings.mode != 'dev') {
-    var imagePath = apApp.settings.FullPath + '/' + user.photo; //full file path
+    var imagePath = apApp.settings.FullPath + user.photo; //full file path
     var url = encodeURI(user.photo_url);
     var ft = new FileTransfer();
     ft.download(url, imagePath, function(file) {
+      var image_path = file.toURL();
       if (user.reupload != 1) {
         _messagePopup('Downloading User photo successfully', false);
       }
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [file.fullPath, user.uid_origin]);
+        tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [image_path, user.uid_origin]);
       });
     }, function(error) {
       _messagePopup('There was an error downloading image', true);
@@ -3961,15 +3962,16 @@ function _downloadUserPhoto(user) {
 
 function _downloadChildPhoto(child) {
   if (apApp.settings.mode != 'dev') {
-    var imagePath = apApp.settings.FullPath + '/' + child.photo; //full file path
+    var imagePath = apApp.settings.FullPath + child.photo; //full file path
     var url = encodeURI(child.photo_url);
     var ft = new FileTransfer();
     ft.download(url, imagePath, function(file) {
+      var image_path = file.toURL();
       if (child.reupload != 1) {
         _messagePopup('Downloading Child photo successfully', false);
       }
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
-        tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [file.fullPath, child.cid_origin]);
+        tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [image_path, child.cid_origin]);
       });
     }, function(error) {
       _messagePopup('There was an error downloading image', true);
@@ -3978,7 +3980,7 @@ function _downloadChildPhoto(child) {
 }
 
 function onFileSystemSuccess(fileSystem) {
-  apApp.settings.FullPath = fileSystem.root.fullPath;
+  apApp.settings.FullPath = fileSystem.root.toURL();
 }
 
 function _onFail(evt) {
