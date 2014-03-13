@@ -4001,7 +4001,6 @@ function onFileSystemSuccess(fileSystem) {
    fullPath = fullPath + '/';
   }
   apApp.settings.FullPath = fullPath;
-  _messagePopup(apApp.settings.FullPath);
 }
 
 function _onFail(evt) {
