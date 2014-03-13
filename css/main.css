@@ -161,8 +161,22 @@ label.placeholder + select {
   position: relative;
   z-index: 2;
 }
+.ui-field-contain > label.placeholder + input,
+.ui-field-contain > label.placeholder + textarea,
+.ui-field-contain > label.placeholder + select {
+  z-index: 0;
+}
 label.placeholder.ui-select {
   top: .4em !important
+}
+.ui-select select {
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+.ui-select .ui-btn select {
+  left: 0 !important;
+  top: 0 !important;
 }
 form .ui-field-contain {
   position: relative;
@@ -1243,13 +1257,12 @@ body .main .form .right-side div.ui-input-text:after {
      -moz-box-sizing: border-box;
           box-sizing: border-box;
 }
+.ui-popup-container form div.ui-input-text,
 .ui-popup-container form textarea.ui-input-text {
   background: #fff;
   border: 1px solid #bfbfbf;
 }
 .ui-popup-container form div.ui-input-text input {
-  background: #fff;
-  border: 1px solid #bfbfbf;
   padding: .25em .4em;
   width: 100%;
 }
