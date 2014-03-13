@@ -3324,7 +3324,10 @@ function _uploadChildPictureToSite(child) {
     options.fileKey = "file";
     options.fileName = imageURI.substr(imageURI.lastIndexOf('/') + 1);
     options.mimeType = "image/jpg";
-    ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/child/picture?child_ID=' + child.cid_origin + '&child-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+    ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/child/picture?child_ID=' + child.cid_origin + '&child-photo=' + options.fileName), _uploadPhotoSuccessCallback, 
+    function(error) {
+      ft.upload(imageURI, encodeURI(apApp.settings.restUrl + 'import/child/picture?child_ID=' + child.cid_origin + '&child-photo=' + options.fileName), _uploadPhotoSuccessCallback, _uploadPhotoFailCallback, options);
+    }, options);
   }
 }
 
@@ -3340,7 +3343,7 @@ function _uploadPhotoSuccessCallback(r) {
       'photo' : response.photo,
       'reupload' : 1,
     };
-    _downloadUserPhoto(user);
+    if (window.device.platform == 'iOS') _downloadUserPhoto(user);
     _messagePopup("Successfully uploading User image", false);
   }
   if (response.cid != undefined) {
@@ -3353,7 +3356,7 @@ function _uploadPhotoSuccessCallback(r) {
       'photo' : response.photo,
       'reupload' : 1,
     };
-    _downloadChildPhoto(child);
+    if (window.device.platform == 'iOS') _downloadChildPhoto(child);
     _messagePopup("Successfully uploading Child image", false);
   }
 
@@ -3955,6 +3958,7 @@ function _downloadUserPhoto(user) {
         tx.executeSql('UPDATE  users SET image_path = ?  WHERE uid_origin = ?', [image_path, user.uid_origin]);
       });
     }, function(error) {
+      //_FileTransferError(error);
       _messagePopup('There was an error downloading image', true);
     });
   }
@@ -3974,13 +3978,30 @@ function _downloadChildPhoto(child) {
         tx.executeSql('UPDATE childs SET image_path = ?  WHERE cid_origin = ?', [image_path, child.cid_origin]);
       });
     }, function(error) {
+      //_FileTransferError(error);
       _messagePopup('There was an error downloading image', true);
     });
   }
 }
 
+function _FileTransferError(error){
+  _messagePopup("An error has occurred: Code = " + error.code,true);
+  _messagePopup("Download error source " + error.source,true);
+  _messagePopup("Download error target " + error.target,true);
+}
+
+
 function onFileSystemSuccess(fileSystem) {
-  apApp.settings.FullPath = fileSystem.root.toURL();
+  var fullPath = fileSystem.root.fullPath;
+  if (fullPath == '/') {
+     fullPath = fileSystem.root.toURL();
+  }
+  var slash = fullPath.slice(-1);
+  if (slash != '/') {
+   fullPath = fullPath + '/';
+  }
+  apApp.settings.FullPath = fullPath;
+  _messagePopup(apApp.settings.FullPath);
 }
 
 function _onFail(evt) {
