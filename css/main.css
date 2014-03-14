@@ -617,6 +617,7 @@ div.copyright img {
 .main .ui-listview .ui-icon-plus {
   background-position: -94px -43px;
 }
+#village-goals .ui-icon-plus,
 #my-childrens .ui-icon-plus,
 #my-goals .ui-icon-plus {
   display: none;
