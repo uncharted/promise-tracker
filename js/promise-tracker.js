@@ -509,6 +509,37 @@ function events() {
         }
       });
     })
+    .on('pageinit', '#reset-password', function() {
+      $("#reset-password form").validate({
+         messages: {
+           'reset-password-email' : {
+             required: "Email is required",
+             email: "Please enter correct email"
+           }
+        },
+        errorPlacement: function(error, element) {
+          $("#message-popup label").hide(0, function() {
+            $(this).remove();
+          });
+          setTimeout(function() {
+            $(error).hide(200, function() {
+              $(this).remove();
+            });
+          }, 8000);
+          error.appendTo("#message-popup");
+        },
+        submitHandler: function(form) {
+          // some other code
+          var data = {
+            'email' : $("#reset-password form #reset-password-email").val()
+          }
+          if ( $('#submit-reset-password').attr('data-disabled') == 'false') {
+            _resetPassword(data);
+            $('#submit-reset-password').attr('data-disabled','true');
+          }
+        }
+      });
+    })
     .on('change', 'input[type="date"]', function() {
       var inputName = $(this).attr('name');
       var $labelFor = $('label[for="' + inputName + '"]');
@@ -4411,6 +4442,22 @@ function _loginToApp(data){
         } else if (response.results.users != undefined) {
           _importUsersToApp(response.results.users, 'loginRegister');
         }
+      }
+    });
+}
+function _resetPassword(data){
+  $.mobile.loading('show');
+  $.getJSON(apApp.settings.restUrl + "reset-password?jsoncallback=?&email=" +
+    data.email,
+    function(response) {
+      if (response.reset == 0) {
+        _messagePopup('Sorry, could not find a user with such email.',true);
+        $('#submit-reset-password').attr('data-disabled','false');
+        $.mobile.loading('hide');
+      } else if (response.reset == 1) {
+        _messagePopup('You password has been changed',false);
+        _messagePopup('Please check email box',false);
+        $.mobile.loading('hide');
       }
     });
 }

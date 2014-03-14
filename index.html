@@ -404,6 +404,7 @@
       </header><!-- /#header -->
       <section class="main" data-role="content">
         <h2 class="page-title first-child">Sign in</h2>
+        <p style="text-align: center;"><a href="#reset-password">Forgot password?</a></p>
         <div class="form sign-in">
           <form action="#" method="post" accept-charset="utf-8">
             <div class="ui-field-contain">
@@ -417,6 +418,26 @@
             <div class="ui-field-contain buttons">
               <label for="submit-sign-in" class="ui-hidden-accessible">Login:</label>
               <button type="submit" id="submit-sign-in" class="ui-btn">Login</button>
+            </div>
+          </form>
+        </div>
+      </section><!-- /#main -->
+    </div>
+    <div data-role="page" data-title="Reset-password" id="reset-password" data-add-back-btn="true" class="page">
+      <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
+        <h1 class="logo">Promise Tracker</h1>
+      </header><!-- /#header -->
+      <section class="main" data-role="content">
+        <h2 class="page-title first-child">Reset password</h2>
+        <div class="form reset-password">
+          <form action="#" method="post" accept-charset="utf-8">
+            <div class="ui-field-contain">
+              <label for="reset-password-email" class="placeholder">Email</label>
+              <input type="email" required="required email" class="create-profile-input" name="reset-password-email" id="reset-password-email" value="" />
+            </div>
+            <div class="ui-field-contain buttons">
+              <label for="submit-reset-password" class="ui-hidden-accessible">Reset:</label>
+              <button type="submit" id="submit-reset-password" class="ui-btn">Reset</button>
             </div>
           </form>
         </div>
