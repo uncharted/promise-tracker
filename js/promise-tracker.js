@@ -30,7 +30,7 @@ apApp.settings.queryExclude = {
 };
 apApp.settings.uploadQueryExclude = {};
 apApp.settings.userProfile = {};
-apApp.settings.goalsInvite = {};
+apApp.settings.existGoals = [];
 
 // device APIs are available
 document.addEventListener("deviceready", initApp, false);
@@ -1456,7 +1456,7 @@ function _addGoals(goals, key) {
       'updated': goal.changed,
       'status': 1
     };
-    if (goal.insert == 1) {
+    if (apApp.settings.existGoals[goal.nid] === undefined) {
       // insert new goal
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
         tx.executeSql('INSERT INTO goals (gid_origin, uid_origin, ' +
@@ -1470,6 +1470,7 @@ function _addGoals(goals, key) {
               apApp.settings.queryExclude.goals = true;
               _queryExclude(key);
             }
+            apApp.settings.existGoals[data.gid_origin] = results.insertId;
             _insertAge(goal.age, results.insertId, 'goal');
             _insertTopics(goal.topics, results.insertId, 'goal');
           }, function(err) {
@@ -1478,8 +1479,7 @@ function _addGoals(goals, key) {
       }, function(err) {
         _errorHandler(err, 166);
       });
-    }
-    if (goal.update == 1) {
+    } else {
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
         tx.executeSql('SELECT gid FROM goals WHERE gid_origin = ?', [data.gid_origin], function(tx, results) {
           gid = results.rows.item(0).gid;
@@ -1511,24 +1511,7 @@ function _addGoals(goals, key) {
 function _addChilds(childs, key) {
   var users = [];
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
-    childs.goalsInvite = [];
-    if (childs.goals != undefined) {
-      tx.executeSql('SELECT gid, gid_origin FROM goals WHERE gid_origin IN (' + childs.goals.join() + ')', [],
-        function(tx, results) {
-          var len = results.rows.length;
-          if (len) {
-            for (var i = 0; i < len; i++) {
-              var item = results.rows.item(i);
-              childs.goalsInvite[item.gid_origin] = item.gid;
-            }
-          }
-          _addChildsProcess(tx, childs, key);
-        }, function(err) {
-          _errorHandler(err, 2655)
-        });
-    } else {
-      _addChildsProcess(tx, childs, key);
-    }
+    _addChildsProcess(tx, childs, key);
   });
 }
 
@@ -1551,10 +1534,10 @@ function _addChildsProcess(tx, childs, key) {
             var updated = results.rows.item(0).updated;
             child.image_path = results.rows.item(0).image_path;
             if (child.updated != updated){
-             _updateChild(child, users, childs.goalsInvite);
+             _updateChild(child, users, apApp.settings.existGoals);
             }
           } else {
-            _insertChild(child, users, childs.goalsInvite);
+            _insertChild(child, users, apApp.settings.existGoals);
           }
           i++;
           if (i == size) {
@@ -2037,6 +2020,19 @@ function _dbInit(tx) {
         apApp.settings.registation = false;
         apApp.settings.userProfile = results.rows.item(0);
         _dbSuccessHandler(tx);
+      }
+    }, function(err) {
+      _errorHandler(err, 1045);
+    });
+
+  tx.executeSql('SELECT gid, gid_origin FROM goals', [],
+    function(tx, results) {
+      var len = results.rows.length;
+      if (len) {
+        for (var i = 0; i < len; i++){
+          var item = results.rows.item(i);
+          apApp.settings.existGoals[item.gid_origin] = item.gid
+        }
       }
     }, function(err) {
       _errorHandler(err, 1045);
@@ -3192,7 +3188,10 @@ function _getHtml(idx, dt, options) {
       if (dt.completed == 1) {
         goalClass = ' checked';
       }
-      output += '<li class="check' + goalClass + '" data-gid="' + dt.gid + '">' +
+      output += '<li data-gid="' + dt.gid + '" ' +
+        'class="check checked-goal' + goalClass + '">' +
+        '<span class="edit">Edit</span>' +
+        '<span class="delete">Delete</span>' +
         '<a href="#" data-icon="check" data-transition="slide">' +
         '<span class="rounded small"><img src="' + dt.image_path + '" alt="" /></span>' +
         dt.title + '</a></li>';
@@ -3960,9 +3959,7 @@ function _getYourInvitation() {
         $('#invite-popup-success').popup('open');
       }
 
-      if (response.goals != undefined) {
-        _getGoalsIds(response, 'YourInvite');
-      } else if (response.users != undefined) {
+      if (response.users != undefined) {
         _importUsersToApp(response.users, 'YourInvite');
       } else {
         apApp.settings.queryExclude.YourInvite = true;
@@ -3988,9 +3985,7 @@ function _handlerInvitation(invite_uid, accepted) {
     data: data,
     crossDomain: true,
     success: function(response) {
-      if (response.goals != undefined) {
-        _getGoalsIds(response, 'invite');
-      } else if (response.users != undefined) {
+      if (response.users != undefined) {
         _importUsersToApp(response.users, 'invite');
       } else {
         apApp.settings.queryExclude.invite = true;
@@ -4116,7 +4111,7 @@ function _importUsersToApp(users, key) {
           j++;
           if (j == size_users) {
             if (size_children > 0) {
-              _importChildrenToApp(tx,children,size_children,userInvite,apApp.settings.goalsInvite,key);
+              _importChildrenToApp(tx,children,size_children,userInvite,apApp.settings.existGoals,key);
             } else {
               _queryExcludeInvite(key);
             }
@@ -4126,7 +4121,7 @@ function _importUsersToApp(users, key) {
         j++;
         if (j == size_users) {
           if (size_children > 0) {
-              _importChildrenToApp(tx,children,size_children,userInvite,apApp.settings.goalsInvite,key);
+              _importChildrenToApp(tx,children,size_children,userInvite,apApp.settings.existGoals,key);
           } else {
             _queryExcludeInvite(key);
           }
@@ -4310,9 +4305,7 @@ function _handlerInvitationRegister(invite_uid, accepted) {
     data: data,
     crossDomain: true,
     success: function(response) {
-      if (response.goals != undefined) {
-        _getGoalsIds(response, 'inviteRegister');
-      } else if (response.users != undefined) {
+      if (response.users != undefined) {
         _importUsersToApp(response.users, 'inviteRegister');
       } else {
         _registrationSecondStep();
@@ -4437,9 +4430,7 @@ function _loginToApp(data){
         $('#submit-sign-in').attr('data-disabled','false');
         $.mobile.loading('hide');
       } else if (response.login == 1) {
-        if (response.results.goals != undefined) {
-          _getGoalsIds(response.results, 'loginRegister');
-        } else if (response.results.users != undefined) {
+        if (response.results.users != undefined) {
           _importUsersToApp(response.results.users, 'loginRegister');
         }
       }

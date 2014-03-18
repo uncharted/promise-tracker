@@ -1643,6 +1643,12 @@ ul.ui-listview li.prepare-remove a {
 ul.ui-listview li.prepare-remove .ui-icon {
   left: -60px !important;
 }
+#my-goals li span.edit {
+  background-color: #fff;
+}
+#my-goals li span.edit:after {
+  background-position: -154px -67px;
+}
 
 /* page */
 div.page {
