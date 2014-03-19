@@ -244,11 +244,16 @@ function events() {
       });
     };
   }
-  $('#home .iscroll-wrapper').on('iscroll_onpulldown', _reloadPage);
   // jquery mobile events
   $(document)
-    .on('pageinit', function(e) {
-      $('.iscroll-wrapper', this).on('iscroll_onpulldown', _reloadPage);
+    .on("iscroll_init", function() {
+      $.mobile.iscrollview.prototype.options.scrollTopOnOrientationChange = false;
+      $.mobile.iscrollview.prototype.options.scrollTopOnResize = false;
+      $.mobile.iscrollview.prototype.options.refreshOnPageBeforeShow = true;
+      $.mobile.iscrollview.prototype.options.refreshDelay = 400;
+    })
+    .on('iscroll_onpulldown', function() {
+      _reloadPage();
     })
     .on('pagebeforeshow', function(e) { // event pagebeforeshow
       var pageId = $.mobile.activePage.attr('id');
@@ -263,12 +268,6 @@ function events() {
             .attr('href', '#search-goals-' + cid);
         }
       }
-      setTimeout(function() {
-        var iscrollView = $.mobile.activePage.find('.iscroll-wrapper').data('mobileIscrollview');
-        if (iscrollView) {
-          iscrollView.refresh();
-        }
-      }, 1000);
     })
     .on('pagebeforeshow', '#edit-child', function(e) {
       var cid = $(window).data('cid');
@@ -367,6 +366,7 @@ function events() {
                   }
                 });
               }
+              $('#goal-settings:not(.edit) #reminder-persons li.user').addClass('active');
             }
           }, function(err) { _errorHandler(err, 337); });
       });
@@ -689,6 +689,10 @@ function events() {
     .on('click', '.ui-popup-container .popup-buttons a.close', function(e) {
       var $popup = $(this).parents('div[data-role="popup"]');
       $popup.popup('close');
+      if ($popup.attr('id') == 'add-to-village-popup') {
+          $('#add-to-village-popup .ui-input-text').val('').change();
+          $('#invite-children li').removeClass('active');
+      }
       e.preventDefault();
     })
     .on('click', '.popup-buttons a.invite-button', function(e) {
@@ -917,13 +921,22 @@ function events() {
       data.topicTitle = $('option:checked', this).text();
       if (data.tid) {
         $(this).parents('form')
-          .find('div.input-goal').stop(true, true).slideDown(300);
+          .find('div.input-goal').stop(true, true).slideDown(300, function() {
+            var $this = $(this);
+            _refreshIscroll();
+            setTimeout(function() {
+              var iscrollView = $.mobile.activePage.find('.iscroll-wrapper').data('mobileIscrollview');
+              iscrollView.iscroll.scrollTo(0,200,200,true);
+              $this.find('input').focus();
+            }, 500);
+          });
       } else {
         $(this).parents('form')
-          .find('div.input-goal').stop(true, true).slideUp(300)
+          .find('div.input-goal').stop(true, true).slideUp(300, function() {
+            _refreshIscroll();
+          })
           .find('input').val('');
       }
-      _refreshIscroll();
       e.preventDefault();
     })
     .on('click', '#submit-goal-settings, #submit-goal-settings-no-reminder', function(e) {
@@ -2331,12 +2344,6 @@ function _selectChildSuccessCB(tx, results) {
     }
     // add goals in settings page
     $('#my-goals li:first').after(myGoals);
-    setTimeout(function() {
-      var iscrollView = $('#home .iscroll-wrapper').data('mobileIscrollview');
-      if (iscrollView) {
-        iscrollView.refresh();
-      }
-    }, 1000);
   }
   // assign-village
   tx.executeSql('SELECT u.uid, u.name, u.image_path ' +
@@ -2364,12 +2371,10 @@ function _selectChildSuccessCB(tx, results) {
 }
 
 function _refreshIscroll() {
-  setTimeout(function() {
-    var iscrollView = $.mobile.activePage.find('.iscroll-wrapper').data('mobileIscrollview');
-    if (iscrollView) {
-      iscrollView.refresh();
-    }
-  }, 1000);
+  var iscrollView = $.mobile.activePage.find('.iscroll-wrapper').data('mobileIscrollview');
+  if (iscrollView) {
+    iscrollView.refresh();
+  }
 }
 
 function _reorderChildrenResult(results) {
@@ -3032,7 +3037,7 @@ function _getHtml(idx, dt, options) {
       output += '<div id="search-listing-' + dt.cid + '">';
       output += _getHtml('article', dt);
       output += '<div class="listview-filter">';
-      output += '<ul data-role="listview" data-filter="true" ' +
+      output += '<ul data-role="listview" data-inset="true" data-filter="true" ' +
         'data-input="#search-goals-input-' + dt.cid + '" ' +
         'class="first-bordered">';
       if (dt.goals != undefined && dt.goals.length != 0) {
@@ -4198,6 +4203,7 @@ function _checkUserEmail() {
       if (response.user == 0) {
         _createUserProfile();
       } else {
+        $('#create-profile-email').addClass('error');
         _messagePopup('This email is already in use',true);
         $('#submit-create-profile').attr('data-disabled','false');
         $.mobile.loading('hide');

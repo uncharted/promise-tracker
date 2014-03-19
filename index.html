@@ -3,8 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="format-detection" content="telephone=no" />
-    <meta name="viewport" content="user-scalable=no, initial-scale=1,
-      maximum-scale=1, minimum-scale=1, width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, target-densityDpi=device-dpi" />
     <title>Promise Tracker</title>
     <link rel="stylesheet" href="css/contrib/jquery.mobile.structure-1.3.2.min.css" type="text/css" />
     <link rel="stylesheet" href="css/main.css" type="text/css" />
@@ -404,7 +403,6 @@
       </header><!-- /#header -->
       <section class="main" data-role="content">
         <h2 class="page-title first-child">Sign in</h2>
-        <p style="text-align: center;"><a href="#reset-password">Forgot password?</a></p>
         <div class="form sign-in">
           <form action="#" method="post" accept-charset="utf-8">
             <div class="ui-field-contain">
@@ -421,6 +419,7 @@
             </div>
           </form>
         </div>
+        <p style="float: right; margin: 10px 50px 0;"><a href="#reset-password">Forgot password?</a></p>
       </section><!-- /#main -->
     </div>
     <div data-role="page" data-title="Reset-password" id="reset-password" data-add-back-btn="true" class="page">
@@ -443,7 +442,7 @@
         </div>
       </section><!-- /#main -->
     </div>
-    <div data-role="page" data-title="Registration" id="registration-second-step" data-add-back-btn="true" class="page">
+    <div data-role="page" data-title="Registration" id="registration-second-step" class="page">
       <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
         <h1 class="logo">Promise Tracker</h1>
       </header><!-- /#header -->
@@ -503,17 +502,14 @@
         </div>
       </section><!-- /#main -->
     </div>
-    <div data-role="page" data-title="Registration" id="registration-third-step" data-add-back-btn="true" class="page">
+    <div data-role="page" data-title="Registration" id="registration-third-step" class="page">
       <header class="header" data-role="header" data-id="header" data-position="fixed" data-tap-toggle="false">
         <h1 class="logo">Promise Tracker</h1>
       </header><!-- /#header -->
-      <section class="main" data-role="content">
-        <h2 class="page-title first-child left">Step 3. Build your village<br />and add goals</h2>
-        <p>&nbsp;</p>
-        <p>It takes a village.</p>
-        <p>Use the Promise Tracker to build yours by inviting your family, friends, teachers, babysitters, and anyone else who plays a role in raising your child.</p>
-        <p>Then set goals and assign reminders to individual members.</p>
-        <p>&nbsp;</p>
+      <section class="main" data-role="content" data-iscroll="">
+        <h2 class="page-title first-child left">Step 3: Set Habits and Build Your Village</h2>
+        <p>The Promise Tracker helps you reach broad goals by training you to take small daily actions. Based on Dr. Fogg’s Three Tiny Habits methodology, repeating these small recurring actions builds long term progress that positively impacts your child’s well-being.</p>
+        <p>We know it takes a village. Build your support system by inviting family, friends, teachers, babysitters and anyone else who plays a role in raising your child. They’ll receive an invite and can join in setting and tracking new habits.  Let’s Get Started!</p>
         <div class="form get-started">
           <form action="#" method="post" accept-charset="utf-8">
             <div class="ui-field-contain buttons">
