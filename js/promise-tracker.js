@@ -1976,17 +1976,15 @@ function _dbInit(tx) {
     'uid INTEGER, cid INTEGER, gid INTEGER, updated INTEGER, skipped INTEGER)');
 
   // Create relationships
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (1, "Father")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (2, "Mother")');
+  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (1, "Child")');
+  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (2, "Grandchild")');
   tx.executeSql('INSERT INTO relationships (rid, title) VALUES (3, "Brother")');
   tx.executeSql('INSERT INTO relationships (rid, title) VALUES (4, "Sister")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (5, "Grandmother")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (6, "Grandfather")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (7, "Family Member")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (8, "Teacher")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (9, "Babysitter")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (10, "Friend")');
-  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (11, "Other")');
+  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (5, "Niece")');
+  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (6, "Nephew")');
+  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (7, "Student")');
+  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (8, "Mentee")');
+  tx.executeSql('INSERT INTO relationships (rid, title) VALUES (9, "Other")');
 
   tx.executeSql('SELECT rid, title FROM relationships', [], function(tx, results) {
     var len = results.rows.length;
@@ -2997,7 +2995,7 @@ function _getHtml(idx, dt, options) {
       }
       output += '<ul class="check-listview" data-role="listview">';
       output += '<li class="add" data-icon="plus"><a href="#add-goal-' +
-        dt.cid + '" data-transition="slide">My Goals for ' +
+        dt.cid + '" data-transition="slide">My habits for ' +
         dt.first_name + '</a></li>';
 
       if (dt.goals != undefined && dt.goals.length != 0 && opt.isNew === null) {
@@ -3028,7 +3026,7 @@ function _getHtml(idx, dt, options) {
       output += '</div>';
       break;
     case 'goalsSearchPage':
-      output += '<div data-role="page" data-title="Search Goals" ' +
+      output += '<div data-role="page" data-title="Filter Habits" ' +
         'id="search-goals-' + dt.cid + '" data-cid="' + dt.cid + '" ' +
         'data-add-back-btn="true">';
       output += _getHtml('header', dt);
@@ -3145,12 +3143,12 @@ function _getHtml(idx, dt, options) {
       }
       output += '<div class="theme-b">';
       if (featuredGoals) {
-        output += '<h3 class="label white">Featured goals</h3>';
+        output += '<h3 class="label white">Habit Highlights</h3>';
         output += '<div class="featured-goals">' + featuredGoals;
         output += '<ul class="list-pagerer"></ul></div>'
       }
       output += '</div>';
-      output += '<h3 id="topic-goals-list" class="label white">From the ' +
+      output += '<h3 id="topic-goals-list" class="label white">Habits for ' +
         '<span>' + dt.topicName + '</span></h3>';
       output += '<div class="listview-filter">';
       output += '<ul data-role="listview" class="first-bordered">';
