@@ -3528,7 +3528,6 @@ function _selectUploadChilds(tx, results) {
           'uid_origin': item.uid_origin,
           'relationship': [],
         };
-        _messagePopup('Child Updated '+item.updated);
         if (children[cid].cid_origin == 0) apApp.settings.uploadQueryExclude.childNids++;
         if (children[cid].cid_origin != 0 && children[cid].update_photo == 1) apApp.settings.uploadQueryExclude.childPictures++;
       }
@@ -3550,7 +3549,6 @@ function _selectUploadChilds(tx, results) {
 }
 
 function _uploadChildToSite(childs) {
-  _messagePopup('Upload Child to site',false);
   $.ajax({
     type: 'post',
     url: apApp.settings.restUrl + "import/child",
