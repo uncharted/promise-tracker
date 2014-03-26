@@ -484,6 +484,22 @@ div.copyright img {
 .main .label.white {
   color: #fff;
 }
+.main .content-about{
+  margin: 10px;
+}
+.main .content-about h2{
+  font-size: 24px;
+  line-height: 26px;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin: 0 0 8px;
+  text-align: center;
+}
+.main .content-about li{
+  margin: 0 0 1em;
+  font-size: 16px;
+  line-height: 18px;
+}
 /* article child */
 .main .child.item {
   position: relative;
@@ -537,6 +553,30 @@ div.copyright img {
   -webkit-box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
   -moz-box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
   box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
+}
+.main .child.item span.plus{
+  display: block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  text-indent: -9999px;
+  float: right;
+  line-height: 0;
+  z-index: 400;
+}
+.main .child.item span.plus span{
+  background: url(../images/ico-plus.png) no-repeat 0 0;
+  background-size: 32px 32px;
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
 }
 .main .child.item .title {
   position: absolute;

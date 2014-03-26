@@ -9,7 +9,7 @@ if (apApp.settings.mode == 'dev') {
 }
 else {
   // apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
-   apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
+  apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
 }
 apApp.settings.cron = '';
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
@@ -2861,7 +2861,7 @@ function _deleteReminderFromGoal(tx, winData) {
 
 // Action message
 function _messagePopup(message, error) {
-  var classes = 'msg';
+  /*var classes = 'msg';
   if (error) {
     classes += ' error';
   }
@@ -2873,7 +2873,7 @@ function _messagePopup(message, error) {
     $message.hide(200, function() {
       $(this).remove();
     });
-  }, 8000);
+  }, 8000);*/
 }
 
 // Fail functions
@@ -2920,7 +2920,7 @@ function _getHtml(idx, dt, options) {
       output += '<span class="image-horizontal-gradient-overlay"></span>';
       output += '<span class="title">' + dt.first_name + '</span>';
       if (opt.articleLinked !== null) {
-        output += '</a>';
+        output += '</a><span class="plus"><span></span></span>';
       }
       output += '<a class="edit-child" href="#edit-child" data-transition="slide"><span>Edit child</span></a>';
       output += '</article>';
@@ -3090,7 +3090,7 @@ function _getHtml(idx, dt, options) {
       output += '<div class="content">';
       output += '<label for="public-goal-' + dt.cid + '">';
       output += '<input type="checkbox" name="public-goal-' + dt.cid +
-        '" checked="checked" class="public-goal" />';
+        '" class="public-goal" />';
       output += 'Public <span>(others can use this goal)</span>';
       output += '</label>';
       output += '</div>';
