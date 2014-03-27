@@ -493,7 +493,7 @@ div.copyright img {
   text-transform: uppercase;
   font-weight: 700;
   margin: 0 0 8px;
-  text-align: center;
+  text-align: left;
 }
 .main .content-about li{
   margin: 0 0 1em;
@@ -554,7 +554,7 @@ div.copyright img {
   -moz-box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
   box-shadow: 0px 0px 5px -1px rgba(0,0,0,0.5);
 }
-.main .child.item span.plus{
+.main .child.item a.plus{
   display: block;
   position: absolute;
   right: 0;
@@ -567,7 +567,7 @@ div.copyright img {
   line-height: 0;
   z-index: 400;
 }
-.main .child.item span.plus span{
+.main .child.item a.plus span{
   background: url(../images/ico-plus.png) no-repeat 0 0;
   background-size: 32px 32px;
   display: block;

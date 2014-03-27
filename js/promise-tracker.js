@@ -2920,7 +2920,7 @@ function _getHtml(idx, dt, options) {
       output += '<span class="image-horizontal-gradient-overlay"></span>';
       output += '<span class="title">' + dt.first_name + '</span>';
       if (opt.articleLinked !== null) {
-        output += '</a><span class="plus"><span></span></span>';
+        output += '</a><span></span><a href="#children-' + dt.cid + '" data-transition="slide" class="plus"><span>Edit child</span></a>';
       }
       output += '<a class="edit-child" href="#edit-child" data-transition="slide"><span>Edit child</span></a>';
       output += '</article>';
