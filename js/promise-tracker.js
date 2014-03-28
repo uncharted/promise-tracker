@@ -269,6 +269,9 @@ function events() {
         }
       }
     })
+    .on('pagebeforeshow', '#home', function(e) {
+      _refreshIscroll();
+    })
     .on('pagebeforeshow', '#edit-child', function(e) {
       var cid = $(window).data('cid');
       if (cid !== undefined) {
@@ -3065,7 +3068,7 @@ function _getHtml(idx, dt, options) {
       output += '<form action="#" method="post" accept-charset="utf-8">';
       output += '<div class="ui-field-contain">';
       output += '<label for="in-topic-' + dt.cid + '" class="select">' +
-        'I\'m looking for goals in</label>';
+        'I\'m looking for habits in</label>';
       output += '<select name="in-topic-' + dt.cid + '" class="in-topic">';
       output += '<option value="">Choose a topic</option>';
       output += '</select>';
