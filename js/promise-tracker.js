@@ -3964,7 +3964,7 @@ function _getYourInvitation() {
       }
 
       if (response.users != undefined) {
-        _importUsersToApp(response.users, 'YourInvite');
+        _importUsersToApp(response.users, response.children, 'YourInvite');
       } else {
         apApp.settings.queryExclude.YourInvite = true;
         _queryExclude('_dbCronHandler');
@@ -3990,7 +3990,7 @@ function _handlerInvitation(invite_uid, accepted) {
     crossDomain: true,
     success: function(response) {
       if (response.users != undefined) {
-        _importUsersToApp(response.users, 'invite');
+        _importUsersToApp(response.users, response.children, 'invite');
       } else {
         apApp.settings.queryExclude.invite = true;
         _queryExclude('_dbQuery');
@@ -4086,11 +4086,14 @@ function _onFail(evt) {
 
 }
 
-function _importUsersToApp(users, key) {
+function _importUsersToApp(users, children, key) {
   var userInvite = [];
-  var children = [];
-  var size_children = 0;
+  //var children = [];
   var size_users = Object.keys(users).length;
+  var size_children = 0;
+  if (children != undefined) {
+    size_children = Object.keys(children).length;
+  }
   var j = 0;
   var ts = parseInt(new Date().getTime() / 1000);
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
@@ -4102,16 +4105,16 @@ function _importUsersToApp(users, key) {
         function(tx, results) {
           // set user profile UID
           var uid = results.insertId;
-          userInvite[uid_origin] = uid;
+          userInvite[user.uid_origin] = uid;
           if (user.photo != undefined) _downloadUserPhoto(user);
           _messagePopup('User ' + user.name + ' was created');
           //if (user.children == undefined) _queryExcludeInvite(key);
-          if (user.children != undefined) {
+          /*if (user.children != undefined) {
             $.each(user.children, function(i, child){
               size_children++;
               children.push(child);
             });
-          }
+          }*/
           j++;
           if (j == size_users) {
             if (size_children > 0) {
@@ -4311,7 +4314,7 @@ function _handlerInvitationRegister(invite_uid, accepted) {
     crossDomain: true,
     success: function(response) {
       if (response.users != undefined) {
-        _importUsersToApp(response.users, 'inviteRegister');
+        _importUsersToApp(response.users, response.children, 'inviteRegister');
       } else {
         _registrationSecondStep();
       }
@@ -4436,7 +4439,7 @@ function _loginToApp(data){
         $.mobile.loading('hide');
       } else if (response.login == 1) {
         if (response.results.users != undefined) {
-          _importUsersToApp(response.results.users, 'loginRegister');
+          _importUsersToApp(response.results.users, response.results.children, 'loginRegister');
         }
       }
     });
