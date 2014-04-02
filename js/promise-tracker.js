@@ -1864,6 +1864,7 @@ function _queryExclude(key) {
                 transition: "none"
               });
             }
+            _refreshIscroll();
             $('#list-children').css('visibility', 'visible');
           }, function(err) {
             _errorHandler(err, 1585);
