@@ -1314,7 +1314,12 @@ function events() {
 }
 
 function _reloadPage() {
-  window.localStorage.setItem("reloadedPage", $.mobile.activePage.attr('id'));
+  var id = $.mobile.activePage.attr('id');
+  if (id == 'edit-child') {
+    var cid = parseInt($(window).data('cid'));
+    window.localStorage.setItem("childreloadedPage", cid);
+  }
+  window.localStorage.setItem("reloadedPage", id);
   $.mobile.loading('show');
   setTimeout(function() {
     $.mobile.loading('hide');
@@ -1859,6 +1864,12 @@ function _queryExclude(key) {
               if (reloadedPage == 'goal-settings') {
                 var cid = $(window).data('cid');
                 reloadedPage = 'children-' + cid;
+              }
+              if (reloadedPage == 'edit-child') {
+                var cid = window.localStorage.getItem("childreloadedPage");
+                if (cid != undefined) {
+                  $(window).data('cid',cid);
+                }
               }
               $.mobile.changePage('#' + reloadedPage, {
                 transition: "none"
@@ -3034,12 +3045,12 @@ function _getHtml(idx, dt, options) {
         'id="search-goals-' + dt.cid + '" data-cid="' + dt.cid + '" ' +
         'data-add-back-btn="true">';
       output += _getHtml('header', dt);
-      output += '<section class="main" data-role="content" data-iscroll="">';
-      output += _getHtml('iscroll', dt);
+      output += '<section class="main" data-role="content">';
+      //output += _getHtml('iscroll', dt);
       output += '<div id="search-listing-' + dt.cid + '">';
       output += _getHtml('article', dt);
       output += '<div class="listview-filter">';
-      output += '<ul data-role="listview" data-inset="true" data-filter="true" ' +
+      output += '<ul data-role="listview" data-filter="true" ' +
         'data-input="#search-goals-input-' + dt.cid + '" ' +
         'class="first-bordered">';
       if (dt.goals != undefined && dt.goals.length != 0) {
@@ -3095,7 +3106,7 @@ function _getHtml(idx, dt, options) {
       output += '<label for="public-goal-' + dt.cid + '">';
       output += '<input type="checkbox" name="public-goal-' + dt.cid +
         '" class="public-goal" />';
-      output += 'Public <span>(others can use this goal)</span>';
+      output += 'Public <span>(others can use this habit)</span>';
       output += '</label>';
       output += '</div>';
       output += '</div>';
