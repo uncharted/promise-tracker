@@ -2037,10 +2037,12 @@ function _dbInit(tx) {
       apApp.settings.profileUID = 1;
       if (len === 0) {
         apApp.settings.registation = true;
-        if (apApp.settings.Connection) {
-          _getFirstContent('_registerUser');
-        } else{
-          _getEthernetConntent();
+        var applaunchCount = window.localStorage.getItem('launchCount');
+        if(applaunchCount === null){
+          window.localStorage.setItem('launchCount', true);
+          _initTutorialPage();
+        } else {
+          _initStartApp();
         }
       } else {
         apApp.settings.registation = false;
@@ -2117,7 +2119,7 @@ function _dbQuery(tx) {
       }
     }, function(err) { _errorHandler(err, 1080); });
 
-  tx.executeSql('SELECT u.uid, u.image_path, u.name, u.last_name, u.email ' +
+  tx.executeSql('SELECT u.uid, u.image_path, u.name, u.last_name, u.email, u.password ' +
     'FROM users AS u', [], _selectUsersSuccessCB, function(err) {
       _errorHandler(err, 1083);
     });
@@ -2199,9 +2201,12 @@ function _selectUsersSuccessCB(tx, results) {
   if (results.rows.length != 0) {
     var profile = results.rows.item(0);
     profileImagePath = profile.image_path;
+    profilePassword = profile.password;
     $('#profile-name').val(profile.name);
     $('#profile-last-name').val(profile.last_name);
     $('#profile-email').val(profile.email);
+    if (profilePassword == null) profilePassword = '';
+    $('#profile-password').attr('osrc',profilePassword);
     if (profileImagePath) {
       $('#profile-photo-img')
         .attr('src', profileImagePath)
@@ -2233,18 +2238,26 @@ function _selectUsersSuccessCB(tx, results) {
       'image_path': $('#profile-photo-img').attr('src'),
       'update_photo': 0
     };
+    var password = $('#profile-password').val();
+    var old_password = $('#profile-password').attr('osrc');
 
     if ($('#profile-photo-img').attr('src') != $('#profile-photo-img').data('osrc')) {
       data.update_photo = 1;
+    }
+
+    if (password != old_password && password != ''){
+      data.password = password;
+    } else {
+      data.password = old_password;
     }
 
     // Create or Update profile
     apApp.settings.dbPromiseTracker.transaction(function(tx) {
       var updatedTimestamp = parseInt(new Date().getTime() / 1000);
       // create user profile
-      tx.executeSql('UPDATE users SET name = ?, last_name = ?, email = ?, ' +
+      tx.executeSql('UPDATE users SET name = ?, last_name = ?, email = ?, password = ?, ' +
         'image_path = ?, updated = ?, update_photo = ? ' +
-        'WHERE uid = ?', [data.name, data.last_name, data.email, data.image_path, updatedTimestamp, data.update_photo, apApp.settings.profileUID],
+        'WHERE uid = ?', [data.name, data.last_name, data.email, data.password, data.image_path, updatedTimestamp, data.update_photo, apApp.settings.profileUID],
         function() {
           _messagePopup('Profile has been updated.', false);
           _reloadPage();
@@ -3069,6 +3082,21 @@ function _getHtml(idx, dt, options) {
       output += '</section>';
       output += '</div>';
       break;
+    case 'tutorial':
+      output += '<div data-role="page" data-title="Tutorial" ' +
+        'id="tutorial">';
+      output += '<section class="main" data-role="content">';
+      output += '<div id="tutorial-slider" class="tutorial-slider">';
+      output += '  <img src="images/slide/slide1.png" alt="" />';
+      output += '  <img src="images/slide/slide2.png" alt="" />';
+      output += '  <img src="images/slide/slide3.png" alt="" />';
+      output += '  <img src="images/slide/slide4.png" alt="" />';
+      output += '  <img src="images/slide/slide5.png" alt="" />';
+      output += '  <ul class="list-pagerer"></ul>';
+      output += '</div>';
+      output += '</section>';
+      output += '</div>';
+      break;
     case 'addGoalPage':
       output += '<div data-role="page" data-title="Add Goal" id="add-goal-' +
         dt.cid + '" data-add-back-btn="true" data-cid="' + dt.cid +
@@ -3299,6 +3327,17 @@ function _getHtml(idx, dt, options) {
       output += '<div id="popup-connection" data-role="popup">';
       output += '  <div class="popup-holder">';
       output += '    <h3>The connection to the server has failed. Please try again later ...</h3>';
+      output += '  </div>';
+      output += '  <div class="popup-buttons">';
+      output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
+      output += '  </div>';
+      output += '</div>';
+      break;
+    case 'resetPassword':
+      output += '<div id="popup-reset-password" data-role="popup">';
+      output += '  <div class="popup-holder">';
+      output += '    <h3>Thank you.</h3>';
+      output += '    <p>A temporary password has been sent to your email. Please login and update your password under My Settings.</p>';
       output += '  </div>';
       output += '  <div class="popup-buttons">';
       output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
@@ -4466,11 +4505,72 @@ function _resetPassword(data){
         $('#submit-reset-password').attr('data-disabled','false');
         $.mobile.loading('hide');
       } else if (response.reset == 1) {
-        _messagePopup('You password has been changed',false);
-        _messagePopup('Please check email box',false);
+        var popup = _getHtml('resetPassword');
+        $('#reset-password').append(popup);
+        $('#popup-reset-password').popup();
+        $('#popup-reset-password').popup('enable');
+        $('#popup-reset-password').popup('open');
         $.mobile.loading('hide');
       }
     });
+}
+
+function _initTutorialPage(){
+    var page = _getHtml('tutorial');
+    $('#home').after(page);
+    $.mobile.changePage('#tutorial', {
+      transition: "slide"
+    });
+
+    $('#tutorial-slider').cycle({
+        fx: 'scrollHorz',
+        slides: '> img',
+        allowWrap: false,
+        speed: 500,
+        timeout: 0,
+        loop : 1,
+        pager: '> ul.list-pagerer',
+        pagerActiveClass: 'active',
+        pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
+    });
+    var loop = false;
+    $('#tutorial-slider').on('cycle-after',function(event, optionHash, outgoingSlideEl, incomingSlideEl, forwardFlag){
+        console.log(optionHash);
+		if (optionHash.slideNum == optionHash.slideCount) {
+          loop = true;
+        }
+    });
+    $('#tutorial-slider').on('cycle-before',function(){
+        if (loop) {
+          $.mobile.changePage('#home', {
+            transition: "slide"
+          });
+          _initStartApp();
+        }
+
+    });
+
+    $(document).on('swipeleft swiperight', '#tutorial',
+      function(e) {
+        switch (e.type) {
+          case 'swipeleft':
+            $('#tutorial-slider').cycle('next');
+            break;
+          case 'swiperight':
+            $('#tutorial-slider').cycle('prev'); 
+            break;
+        }
+      }
+    )
+	
+}
+
+function _initStartApp(){
+  if (apApp.settings.Connection) {
+    _getFirstContent('_registerUser');
+  } else{
+    _getEthernetConntent();
+  }
 }
 
 })(jQuery);
