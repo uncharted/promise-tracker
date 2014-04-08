@@ -4528,7 +4528,6 @@ function _initTutorialPage(){
         allowWrap: false,
         speed: 500,
         timeout: 0,
-        loop : 1,
         pager: '> ul.list-pagerer',
         pagerActiveClass: 'active',
         pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
@@ -4540,21 +4539,20 @@ function _initTutorialPage(){
           loop = true;
         }
     });
-    $('#tutorial-slider').on('cycle-before',function(){
-        if (loop) {
-          $.mobile.changePage('#home', {
-            transition: "slide"
-          });
-          _initStartApp();
-        }
-
-    });
 
     $(document).on('swipeleft swiperight', '#tutorial',
       function(e) {
         switch (e.type) {
           case 'swipeleft':
-            $('#tutorial-slider').cycle('next');
+            if (loop) {
+              
+              $.mobile.changePage('#home', {
+                transition: "slide"
+              });
+              _initStartApp();
+            } else {
+              $('#tutorial-slider').cycle('next');
+            }
             break;
           case 'swiperight':
             $('#tutorial-slider').cycle('prev'); 
@@ -4566,6 +4564,7 @@ function _initTutorialPage(){
 }
 
 function _initStartApp(){
+  $.mobile.loading('show');
   if (apApp.settings.Connection) {
     _getFirstContent('_registerUser');
   } else{
