@@ -606,8 +606,9 @@ function events() {
               $('#village-goals li[data-gid="' + data.gid + '"]')
                 .addClass('checked');
               $goal.addClass('checked');
+              _showCompetedMessage(tx,data);
             }
-            _messagePopup('Goal was updated.', false);
+            //_messagePopup('Goal was updated.', false);
             $.mobile.loading('hide');
           }, function(err) {
             _errorHandler(err, 597);
@@ -900,6 +901,7 @@ function events() {
                     });
                 } else {
                   $.mobile.loading('hide');
+                  _messageNoresults();
                   _messagePopup('No results.', false);
                 }
                 $('#add-goal-' + globalCid).find('form').trigger('reset');
@@ -1475,15 +1477,16 @@ function _addGoals(goals, key) {
       'featured': goal.featured,
       'created': goal.created,
       'updated': goal.changed,
+      'message' : goal.message,
       'status': 1
     };
     if (apApp.settings.existGoals[goal.nid] === undefined) {
       // insert new goal
       apApp.settings.dbPromiseTracker.transaction(function(tx) {
         tx.executeSql('INSERT INTO goals (gid_origin, uid_origin, ' +
-          'title, featured, updated, created, status) ' +
-          'VALUES (?, ?, ?, ?, ?, ?, ?)', [data.gid_origin, data.uid_origin, data.title,
-            data.featured, data.created, data.updated, data.status
+          'title, featured, updated, created, status, message) ' +
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [data.gid_origin, data.uid_origin, data.title,
+            data.featured, data.created, data.updated, data.status, data.message
           ],
           function(tx, results) {
             i++;
@@ -1509,18 +1512,19 @@ function _addGoals(goals, key) {
             apApp.settings.queryExclude.goals = true;
             _queryExclude(key);
           }
-          // update tips age
+          // update goal age
           tx.executeSql('DELETE FROM age WHERE entity_id = ? AND type="goal"', [gid], function(tx, results) {
             _insertAge(goal.age, gid, 'goal');
           });
-          // update tips topic
+          // update goal topic
           tx.executeSql('DELETE FROM topic WHERE entity_id = ? AND type="goal"', [gid], function(tx, results) {
             _insertTopics(goal.topics, gid, 'goal');
           });
 
         });
-        // update tips content
-        tx.executeSql('UPDATE goals SET title = ?, featured = ?, updated = ?, created = ?, status=?, uid_origin=? WHERE gid_origin = ?', [data.title, data.featured, data.updated, data.created, data.status, data.uid_origin, data.gid_origin]);
+        // update goal content
+        tx.executeSql('UPDATE goals SET title = ?, message = ?, featured = ?, updated = ?, created = ?, status=?, uid_origin=? WHERE gid_origin = ?',
+          [data.title, data.message, data.featured, data.updated, data.created, data.status, data.uid_origin, data.gid_origin]);
 
       }, function(err) {
         _errorHandler(err, 190);
@@ -1973,7 +1977,7 @@ function _dbInit(tx) {
   tx.executeSql('CREATE TABLE IF NOT EXISTS relationships (rid INTEGER, ' +
     'title TEXT)');
   tx.executeSql('CREATE TABLE IF NOT EXISTS goals (gid INTEGER PRIMARY KEY, ' +
-    'gid_origin INTEGER, uid INTEGER, uid_origin INTEGER, title, ' +
+    'gid_origin INTEGER, uid INTEGER, uid_origin INTEGER, title, message, ' +
     'featured INTEGER, updated INTEGER, created INTEGER, ' +
     'status INTEGER)');
   tx.executeSql('CREATE TABLE IF NOT EXISTS goal_index (gid INTEGER, ' +
@@ -2039,8 +2043,9 @@ function _dbInit(tx) {
         apApp.settings.registation = true;
         var applaunchCount = window.localStorage.getItem('launchCount');
         if(applaunchCount === null){
-          window.localStorage.setItem('launchCount', true);
-          _initTutorialPage();
+          //window.localStorage.setItem('launchCount', true);
+          //_initTutorialPage();
+          _initStartApp();
         } else {
           _initStartApp();
         }
@@ -3344,6 +3349,26 @@ function _getHtml(idx, dt, options) {
       output += '  </div>';
       output += '</div>';
       break;
+    case 'noResults':
+      output += '<div id="popup-noresults-'+dt.tid+'" data-role="popup">';
+      output += '  <div class="popup-holder">';
+      output += '    <p>Sorry, there are no habits in this category</p>';
+      output += '  </div>';
+      output += '  <div class="popup-buttons">';
+      output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
+      output += '  </div>';
+      output += '</div>';
+      break;
+    case 'competedMessage':
+      output += '<div id="goal-competed-'+dt.gid+'" data-role="popup">';
+      output += '  <div class="popup-holder">';
+      output += '    <p>'+dt.message+'</p>';
+      output += '  </div>';
+      output += '  <div class="popup-buttons">';
+      output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
+      output += '  </div>';
+      output += '</div>';
+      break;
   }
   return output;
 }
@@ -4420,7 +4445,6 @@ function _updateChildTime(data) {
   apApp.settings.dbPromiseTracker.transaction(function(tx) {
     tx.executeSql('UPDATE childs SET updated = ? WHERE cid = ?', [ts, data.cid],
       function(tx, results) {
-
       },
       function(err) {
         _errorHandler(err, 3265)
@@ -4515,6 +4539,24 @@ function _resetPassword(data){
     });
 }
 
+function _messageNoresults(){
+  var topicID = $(window).data('topic');
+  var data = {
+    tid : topicID
+  }
+  var pageId = $.mobile.activePage.attr('id');
+  if ($('#' + pageId +' #popup-noresults-'+topicID).get(0)) {
+    $('#' + pageId +' #popup-noresults-'+topicID).popup('open');
+  } else {
+    var popup = _getHtml('noResults',data);
+    $('#' + pageId).append(popup);
+    $('#' + pageId +' #popup-noresults-'+topicID).popup();
+    $('#' + pageId +' #popup-noresults-'+topicID).popup('enable');
+    $('#' + pageId +' #popup-noresults-'+topicID).popup('open');
+  }
+
+}
+
 function _initTutorialPage(){
     var page = _getHtml('tutorial');
     $('#home').after(page);
@@ -4570,6 +4612,32 @@ function _initStartApp(){
   } else{
     _getEthernetConntent();
   }
+}
+
+function _showCompetedMessage(tx,data){
+  tx.executeSql('SELECT * FROM goals WHERE gid = ?',[data.gid],
+    function(tx, results) {
+      var len = results.rows.length;
+      var message = '';
+      if (len) {
+        var goal = results.rows.item(0);
+        if (goal.message) {
+          message = goal.message;
+        } else {
+          message = 'Great Job! Your new habit supports your child’s social, emotional and academic well-being. Continuing these habits creates long term success. Keep up the good work!';
+        }
+        data.message = message;
+        var pageId = $.mobile.activePage.attr('id');
+        var popup = _getHtml('competedMessage',data);
+        $('#' + pageId).append(popup);
+        $('#' + pageId +' #goal-competed-'+data.gid).popup();
+        $('#' + pageId +' #goal-competed-'+data.gid).popup('enable');
+        $('#' + pageId +' #goal-competed-'+data.gid).popup('open');
+      }
+    },
+    function(err) {
+      _errorHandler(err, 3265)
+  });
 }
 
 })(jQuery);
