@@ -1872,6 +1872,12 @@ div.page .main .form form div.ui-input-text:after {
 #tutorial{
   height: 100%;
   overflow: hidden;
+  background-image: url(../images/bg-noise.jpg);
+  -webkit-background-size: cover !important;
+  -moz-background-size: cover !important;
+  -o-background-size: cover !important;
+  background-size: cover !important;
+  background-position: center center;
 }
 #tutorial .main{
   padding: 0;
