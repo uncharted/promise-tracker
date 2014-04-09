@@ -1883,6 +1883,7 @@ div.page .main .form form div.ui-input-text:after {
   padding: 0;
   height: 100%;
   overflow: hidden;
+  background: none;
 }
 #tutorial .list-pagerer{
   position: absolute;
