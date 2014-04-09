@@ -738,6 +738,10 @@ div.copyright img {
   margin: 0;
   text-transform: uppercase;
 }
+.main form label.select{
+  display: block;
+  margin-bottom: 5px;
+}
 .main form label.error {
   text-transform: none;
   color: #002d40;
@@ -1886,6 +1890,24 @@ div.page .main .form form div.ui-input-text:after {
   height: 100%;
   overflow: hidden;
 }
-#tutorial-slider img{
+#tutorial-slider div.slide-item{
   width: 100%;
+  overflow: hidden;
+}
+#tutorial-slider img{
+  width:100%;
+  box-shadow: 0px 8px 4px 0px rgba(0, 0, 0, 0.15); 
+}
+#tutorial-slider div.image{
+  width:62.5%;
+  margin:18.75% auto 0; 
+}
+#tutorial-slider h3{
+  font-size: 15px;
+  line-height: 18px;
+  text-align: center;
+  padding: 0 2.5%;
+  margin: 5% 0 0;
+  font-weight: normal;
+  color: #fff;
 }

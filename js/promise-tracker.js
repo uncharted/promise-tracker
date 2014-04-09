@@ -407,6 +407,7 @@ function events() {
       // add active class on children pager
       var $pager = $('ul.list-pagerer.large.children-pager');
       var pageId = $.mobile.activePage.attr('id');
+      window.localStorage.removeItem("reloadedPage");
       if ($.mobile.activePage.find('.list-pagerer li').size() <= 1) {
         $.mobile.activePage.find('.list-pagerer').hide();
       }
@@ -2043,9 +2044,8 @@ function _dbInit(tx) {
         apApp.settings.registation = true;
         var applaunchCount = window.localStorage.getItem('launchCount');
         if(applaunchCount === null){
-          //window.localStorage.setItem('launchCount', true);
-          //_initTutorialPage();
-          _initStartApp();
+          window.localStorage.setItem('launchCount', true);
+          _initTutorialPage();
         } else {
           _initStartApp();
         }
@@ -3092,11 +3092,26 @@ function _getHtml(idx, dt, options) {
         'id="tutorial">';
       output += '<section class="main" data-role="content">';
       output += '<div id="tutorial-slider" class="tutorial-slider">';
-      output += '  <img src="images/slide/slide1.png" alt="" />';
-      output += '  <img src="images/slide/slide2.png" alt="" />';
-      output += '  <img src="images/slide/slide3.png" alt="" />';
-      output += '  <img src="images/slide/slide4.png" alt="" />';
-      output += '  <img src="images/slide/slide5.png" alt="" />';
+      output += '  <div class="slide-item">';
+      output += '    <div class="image"><img src="images/slider/slide1.png" alt="" /></div>';
+      output += '    <h3>Add your children to create and manage habits across your digital village.</h3>';
+      output += '  </div>';
+      output += '  <div class="slide-item">';
+      output += '    <div class="image"><img src="images/slider/slide2.png" alt="" /></div>';
+      output += '    <h3>Choose research-based habits that automatically correspond to your child’s age or create your own. Sharing them allows other users to set similar goals.</h3>';
+      output += '  </div>';
+      output += '  <div class="slide-item">';
+      output += '    <div class="image"><img src="images/slider/slide3.png" alt="" /></div>';
+      output += '    <h3>Create a village by inviting others to participate. Work as a team towards your child’s success.</h3>';
+      output += '  </div>';
+      output += '  <div class="slide-item">';
+      output += '    <div class="image"><img src="images/slider/slide4.png" alt="" /></div>';
+      output += '    <h3>Set reminders for yourself and your village to stick to your habits.</h3>';
+      output += '  </div>';
+      output += '  <div class="slide-item">';
+      output += '    <div class="image"><img src="images/slider/slide5.png" alt="" /></div>';
+      output += '    <h3>Check off Habits as you achieve them, learn more about Dr. B.J. Fogg’s 3 Tiny Habits methodology and find additional resources on our campaign website. Get Started!</h3>';
+      output += '  </div>';
       output += '  <ul class="list-pagerer"></ul>';
       output += '</div>';
       output += '</section>';
@@ -3119,8 +3134,8 @@ function _getHtml(idx, dt, options) {
       output += '</select>';
       output += '</div>';
       output += '<div class="ui-field-contain">';
-      output += '<label for="select-topic-' + dt.cid + '">' +
-        'Actually, I want to add my own</label>';
+      output += '<label for="select-topic-' + dt.cid + '" class="select">' +
+        'I want to add my own</label>';
       output += '<select name="select-topic-' + dt.cid + '" ' +
         'class="select-topic">';
       output += '<option value="">Choose a topic</option>';
@@ -4566,7 +4581,7 @@ function _initTutorialPage(){
 
     $('#tutorial-slider').cycle({
         fx: 'scrollHorz',
-        slides: '> img',
+        slides: '> div.slide-item',
         allowWrap: false,
         speed: 500,
         timeout: 0,
