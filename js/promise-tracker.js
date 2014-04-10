@@ -426,6 +426,11 @@ function events() {
         return value == $("#create-profile-password").val();
       }, 'Incorrect password confirmation.');
       $('#registration-first-step form').validate({
+        onkeyup : function(element) {
+           if ($(element).hasClass('error')){
+             $(element).valid();
+           }
+        },
         rules: {
           password: {
             minlength: 5
