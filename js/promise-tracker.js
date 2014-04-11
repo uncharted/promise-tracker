@@ -860,7 +860,7 @@ function events() {
               'LEFT JOIN goals AS g ON g.gid = a.entity_id ' +
               'LEFT JOIN goal_index AS gi ON gi.gid = g.gid ' +
               'LEFT JOIN topic AS t ON g.gid = t.entity_id ' +
-              'WHERE a.type = "goal" AND t.type = "goal" AND t.topic=? ' +
+              'WHERE a.type = "goal" AND t.type = "goal" AND g.status = 1 AND t.topic=? ' +
               'ORDER BY g.featured DESC, g.title ASC', [topicID],
               function(tx, results) {
                 if (results.rows.length) {
@@ -1484,7 +1484,7 @@ function _addGoals(goals, key) {
       'created': goal.created,
       'updated': goal.changed,
       'message' : goal.message,
-      'status': 1
+      'status' : goal.status,
     };
     if (apApp.settings.existGoals[goal.nid] === undefined) {
       // insert new goal
@@ -2149,7 +2149,7 @@ function _dbQuery(tx) {
     'LEFT JOIN age AS a ON a.age = c.age ' +
     'LEFT JOIN goals AS g ON g.gid = a.entity_id ' +
     'LEFT JOIN goal_index AS gi ON gi.gid = g.gid ' +
-    'WHERE a.type = "goal" ' +
+    'WHERE a.type = "goal" and g.status = 1 ' +
     'ORDER BY g.title ASC', [], _selectSearchPageSuccessCB, function(err) {
       _errorHandler(err, 1100);
     });
@@ -3380,12 +3380,14 @@ function _getHtml(idx, dt, options) {
       output += '</div>';
       break;
     case 'competedMessage':
-      output += '<div id="goal-competed-'+dt.gid+'" data-role="popup">';
+      output += '<div id="goal-competed" class="goal-competed-'+dt.gid+'" data-role="popup">';
       output += '  <div class="popup-holder">';
+      output += '    <h2>Great Job!</h2>';
       output += '    <p>'+dt.message+'</p>';
+      output += '    <h3>Keep up the good work!</h3>';
       output += '  </div>';
       output += '  <div class="popup-buttons">';
-      output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
+      output += '    <a href="#" class="single close" data-accepted="no">Thanks!</a>';
       output += '  </div>';
       output += '</div>';
       break;
@@ -4644,15 +4646,15 @@ function _showCompetedMessage(tx,data){
         if (goal.message) {
           message = goal.message;
         } else {
-          message = 'Great Job! Your new habit supports your child’s social, emotional and academic well-being. Continuing these habits creates long term success. Keep up the good work!';
+          message = 'Your new habit supports your child’s social, emotional and academic well-being. Continuing these habits creates long term success.';
         }
         data.message = message;
         var pageId = $.mobile.activePage.attr('id');
         var popup = _getHtml('competedMessage',data);
         $('#' + pageId).append(popup);
-        $('#' + pageId +' #goal-competed-'+data.gid).popup();
-        $('#' + pageId +' #goal-competed-'+data.gid).popup('enable');
-        $('#' + pageId +' #goal-competed-'+data.gid).popup('open');
+        $('#' + pageId +' .goal-competed-'+data.gid).popup();
+        $('#' + pageId +' .goal-competed-'+data.gid).popup('enable');
+        $('#' + pageId +' .goal-competed-'+data.gid).popup('open');
       }
     },
     function(err) {
