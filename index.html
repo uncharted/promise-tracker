@@ -17,14 +17,6 @@
     <script type="text/javascript" charset="utf-8" src="js/contrib/iscroll.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/contrib/jquery.mobile.iscrollview.js"></script>
     <script type="text/javascript" charset="utf-8" src="js/promise-tracker.js"></script>
-    <script type="text/javascript" charset="utf-8">
-      window.onerror = function(msg, url, line) {
-        var idx = url.lastIndexOf("/");
-        if(idx > -1) {url = url.substring(idx+1);}
-          alert("ERROR in " + url + " (line #" + line + "): " + msg);
-          return false; //suppress Error Alert;
-        };
-    </script>
   </head>
   <body>
     <!-- Page Front  -->
