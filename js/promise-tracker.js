@@ -3790,7 +3790,9 @@ function _uploadQueryExclude() {
     apApp.settings.uploadQueryExclude.child === true) {
     _uploadGoalsofChildren();
     if (!apApp.settings.registation) {
-       _getContent('_dbQuery');
+       setTimeout(function(){
+         _getContent('_dbQuery');
+       },5000);
        //_queryExclude('_dbQuery');
       } else {
        _queryExclude('_dbQuery');
