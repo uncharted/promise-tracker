@@ -306,9 +306,14 @@ function events() {
                           .addClass('hidden').removeClass('visible');
                         for (var i = 0; i < len; i++) {
                           var item = results.rows.item(i);
-                          $('#edit-assign-village li[data-uid="' + item.uid + '"]')
-                            .addClass('visible').removeClass('hidden')
-                            .find('select').val(item.relationship).change();
+                          if (item.relationship) {
+                            $('#edit-assign-village li[data-uid="' + item.uid + '"]')
+                              .addClass('visible').removeClass('hidden')
+                              .find('select').val(item.relationship).change();
+                          }
+                        }
+                        if (!$('#edit-assign-village li.hidden').get(0)) {
+                          $('#edit-assign-village').next().hide();
                         }
                       }
                     }, function(err) {
@@ -3375,6 +3380,16 @@ function _getHtml(idx, dt, options) {
       output += '  </div>';
       output += '</div>';
       break;
+    case 'error':
+      output += '<div id="popup-error" data-role="popup">';
+      output += '  <div class="popup-holder">';
+      output += '    <p>'+dt.msg+'</p>';
+      output += '  </div>';
+      output += '  <div class="popup-buttons">';
+      output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
+      output += '  </div>';
+      output += '</div>';
+      break;
     case 'competedMessage':
       output += '<div id="goal-competed" class="goal-competed-'+dt.gid+'" data-role="popup">';
       output += '  <div class="popup-holder">';
@@ -4529,7 +4544,7 @@ function _loginToApp(data){
     data.email + '&pass=' + data.password,
     function(response) {
       if (response.login == 0) {
-        _messagePopup('Sorry, unrecognized username or password.',true);
+        _messageError('Sorry, unrecognized username or password.');
         $('#submit-sign-in').attr('data-disabled','false');
         $.mobile.loading('hide');
       } else if (response.login == 1) {
@@ -4545,7 +4560,7 @@ function _resetPassword(data){
     data.email,
     function(response) {
       if (response.reset == 0) {
-        _messagePopup('Sorry, could not find a user with such email.',true);
+        _messageError('Sorry, could not find a user with such email.');
         $('#submit-reset-password').attr('data-disabled','false');
         $.mobile.loading('hide');
       } else if (response.reset == 1) {
@@ -4557,6 +4572,19 @@ function _resetPassword(data){
         $.mobile.loading('hide');
       }
     });
+}
+
+function _messageError(msg){
+    var data = {
+      msg : msg
+    }
+    var pageId = $.mobile.activePage.attr('id');
+    var popup = _getHtml('error',data);
+    $('#' + pageId +' #popup-error').remove();
+    $('#' + pageId).append(popup);
+    $('#' + pageId +' #popup-error').popup();
+    $('#' + pageId +' #popup-error').popup('enable');
+    $('#' + pageId +' #popup-error').popup('open');
 }
 
 function _messageNoresults(){
