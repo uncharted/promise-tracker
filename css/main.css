@@ -1125,6 +1125,9 @@ div[id*="add-goal"] .main .ui-checkbox .ui-icon {
 body .main .form .right-side div.ui-input-text {
   padding-right: 22px;
 }
+body .main .form .right-side.time-box div.ui-input-text{
+  padding-right: 0;
+}
 body .main .form .right-side div.ui-input-text:after {
   right: 0;
 }
