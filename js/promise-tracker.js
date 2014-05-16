@@ -8,13 +8,11 @@ if (apApp.settings.mode == 'dev') {
   apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
 }
 else {
-  // apApp.settings.serverUrl = 'http://drupal7.dev/ap/';
-  apApp.settings.serverUrl = 'http://dev.uncharteddigital.com/ap/';
   apApp.settings.serverUrl = 'http://www.americanpromise.org/';
 }
 apApp.settings.cron = '';
 apApp.settings.restUrl = apApp.settings.serverUrl + 'ap/rest/';
-apApp.settings.cron_safe_threshold = 1 * 60; // 2 minute;
+apApp.settings.cron_safe_threshold = 15 * 60; // 15 minutes;
 apApp.settings.dbPromiseTracker;
 apApp.settings.timestamp = parseInt(new Date().getTime() / 1000);
 apApp.settings.tips = {};
@@ -272,6 +270,18 @@ function events() {
     })
     .on('pagebeforeshow', '#home', function(e) {
       _refreshIscroll();
+    })
+    .on('pagebeforeshow', '#tutorial', function(e) {
+       $('#tutorial-slider').cycle({
+         fx: 'scrollHorz',
+         slides: '> div.slide-item',
+         allowWrap: false,
+         speed: 500,
+         timeout: 0,
+         pager: '> ul.list-pagerer',
+         pagerActiveClass: 'active',
+         pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
+       });
     })
     .on('pagebeforeshow', '#edit-child', function(e) {
       var cid = $(window).data('cid');
@@ -3373,7 +3383,7 @@ function _getHtml(idx, dt, options) {
     case 'noResults':
       output += '<div id="popup-noresults-'+dt.tid+'" data-role="popup">';
       output += '  <div class="popup-holder">';
-      output += '    <p>Sorry, there are no habits in this category</p>';
+      output += '    <p>Be the first to add a habit to this topic. Select this topic from "I want to add my Own" below.</p>';
       output += '  </div>';
       output += '  <div class="popup-buttons">';
       output += '    <a href="#" class="single close" data-accepted="no">Ok</a>';
@@ -4014,10 +4024,13 @@ function _sendInvitation() {
     crossDomain: true,
     success: function(response) {
       if (response.send_invite == true) {
-        $('#add-to-village-success-popup').popup();
-        $('#add-to-village-success-popup').popup('enable');
-        $('#add-to-village-success-popup').popup('open');
+        $('#add-to-village-success-popup').find('h3').text('Notification has been sent successfully.');
+      } else{
+        $('#add-to-village-success-popup').find('h3').text('Such email was already used for invite');
       }
+      $('#add-to-village-success-popup').popup();
+      $('#add-to-village-success-popup').popup('enable');
+      $('#add-to-village-success-popup').popup('open');
     }
   });
 }
@@ -4612,20 +4625,9 @@ function _initTutorialPage(){
       transition: "slide"
     });
 
-    $('#tutorial-slider').cycle({
-        fx: 'scrollHorz',
-        slides: '> div.slide-item',
-        allowWrap: false,
-        speed: 500,
-        timeout: 0,
-        pager: '> ul.list-pagerer',
-        pagerActiveClass: 'active',
-        pagerTemplate: '<li><a href="#">{{slideNum}}</a></li>',
-    });
     var loop = false;
     $('#tutorial-slider').on('cycle-after',function(event, optionHash, outgoingSlideEl, incomingSlideEl, forwardFlag){
-        console.log(optionHash);
-		if (optionHash.slideNum == optionHash.slideCount) {
+        if (optionHash.slideNum == optionHash.slideCount) {
           loop = true;
         }
     });
@@ -4635,7 +4637,6 @@ function _initTutorialPage(){
         switch (e.type) {
           case 'swipeleft':
             if (loop) {
-              
               $.mobile.changePage('#home', {
                 transition: "slide"
               });
