@@ -3591,6 +3591,9 @@ function _uploadUserToSite(user) {
         _uploadUserChilds(user);
         _uploadUserGoals(user);
       }
+    },
+    error: function(e) {
+      alert('line 3596: _uploadUserToSite');
     }
   });
 }
@@ -3687,6 +3690,9 @@ function _uploadChildToSite(childs) {
         apApp.settings.uploadQueryExclude.child = true;
         _uploadQueryExclude();
       }
+    },
+    error: function(e) {
+      alert('line 3695: _uploadChildToSite');
     }
   });
 }
@@ -3787,7 +3793,9 @@ function _uploadGoalsToSite(goals) {
         apApp.settings.uploadQueryExclude.goals = true;
         _uploadQueryExclude();
       }
-
+    },
+    error: function(e) {
+      alert('line 3798: _uploadGoalsToSite');
     }
   });
 }
@@ -3906,6 +3914,9 @@ function _uploadGoalsofChildrenToSite(goals) {
     success: function(response) {
        apApp.settings.uploadQueryExclude.goalsofChild = true;
       _uploadRemindersofGoals();
+    },
+    error: function(e) {
+      alert('line 3919: _uploadGoalsofChildrenToSite');
     }
   });
 }
@@ -3985,6 +3996,9 @@ function _uploadRemindersofGoalsToSite(reminders){
         // apApp.settings.uploadQueryExclude.reminderofChild = true;
         // _uploadQueryExclude()
       }
+    },
+    error: function(e) {
+      alert('line 4001: _uploadRemindersofGoalsToSite');
     }
   });
 }
@@ -4031,6 +4045,9 @@ function _sendInvitation() {
       $('#add-to-village-success-popup').popup();
       $('#add-to-village-success-popup').popup('enable');
       $('#add-to-village-success-popup').popup('open');
+    },
+    error: function(e) {
+      alert('line 4050: _sendInvitation');
     }
   });
 }
@@ -4062,6 +4079,9 @@ function _getInvitation() {
         apApp.settings.queryExclude.invite = true;
         _queryExclude('_dbCronHandler');
       }
+    },
+    error: function(e) {
+      alert('line 4084: _getInvitation');
     }
   });
 }
@@ -4093,7 +4113,9 @@ function _getYourInvitation() {
         apApp.settings.queryExclude.YourInvite = true;
         _queryExclude('_dbCronHandler');
       }
-
+    },
+    error: function(e) {
+      alert('line 4118: _getYourInvitation');
     }
   });
 }
@@ -4119,7 +4141,9 @@ function _handlerInvitation(invite_uid, accepted) {
         apApp.settings.queryExclude.invite = true;
         _queryExclude('_dbQuery');
       }
-
+    },
+    error: function(e) {
+      alert('line 4146: _handlerInvitation');
     }
   });
 
@@ -4390,6 +4414,9 @@ function _firstUploadUser(user) {
           });
         });
       }
+    },
+    error: function(e) {
+      alert('line 4419: _firstUploadUser');
     }
   });
 }
@@ -4419,6 +4446,9 @@ function _getInvitationRegister() {
       } else {
         _registrationSecondStep();
       }
+    },
+    error: function(e) {
+      alert('line 4451: _getInvitationRegister');
     }
   });
 }
@@ -4442,6 +4472,9 @@ function _handlerInvitationRegister(invite_uid, accepted) {
       } else {
         _registrationSecondStep();
       }
+    },
+    error: function(e) {
+      alert('line 4477: _handlerInvitationRegister');
     }
   });
 }
